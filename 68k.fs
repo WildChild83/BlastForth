@@ -36,10 +36,10 @@
 ( ---------------------------------------------------------------------------- )
 (       Registers                                                              )
 ( ---------------------------------------------------------------------------- )
-$1000 constant tos  $1004 constant r4   $2008 constant ip   $200C constant x4
-$1001 constant r1   $1005 constant r5   $2009 constant x1   $200D constant np
-$1002 constant r2   $1006 constant r6   $200A constant x2   $200E constant sp
-$1003 constant r3   $1007 constant r7   $200B constant x3   $200F constant rp
+$1000 constant tos  $1004 constant d4   $2008 constant ip   $200C constant a4
+$1001 constant d1   $1005 constant d5   $2009 constant a1   $200D constant np
+$1002 constant d2   $1006 constant d6   $200A constant a2   $200E constant sp
+$1003 constant d3   $1007 constant d7   $200B constant a3   $200F constant rp
 $3001 constant ccr  $3002 constant sr   $3003 constant usp
 
 ( ---------------------------------------------------------------------------- )
