@@ -92,10 +92,10 @@ variable ext1       variable ext2       variable ext
 : addr: ( n "name" -- ) create , does> ( -- arg ) @ addr! $8000 ;
 
 %010000 addr: [ip]  %011000 addr: [ip]+  %100000 addr: -[ip]  %101000 addr: [ip
-%010001 addr: [x1]  %011001 addr: [x1]+  %100001 addr: -[x1]  %101001 addr: [x1
-%010010 addr: [x2]  %011010 addr: [x2]+  %100010 addr: -[x2]  %101010 addr: [x2
-%010011 addr: [x3]  %011011 addr: [x3]+  %100011 addr: -[x3]  %101011 addr: [x3
-%010100 addr: [x4]  %011100 addr: [x4]+  %100100 addr: -[x4]  %101100 addr: [x4
+%010001 addr: [a1]  %011001 addr: [a1]+  %100001 addr: -[a1]  %101001 addr: [a1
+%010010 addr: [a2]  %011010 addr: [a2]+  %100010 addr: -[a2]  %101010 addr: [a2
+%010011 addr: [a3]  %011011 addr: [a3]+  %100011 addr: -[a3]  %101011 addr: [a3
+%010100 addr: [a4]  %011100 addr: [a4]+  %100100 addr: -[a4]  %101100 addr: [a4
 %010101 addr: [np]  %011101 addr: [np]+  %100101 addr: -[np]  %101101 addr: [np
 %010110 addr: [sp]  %011110 addr: [sp]+  %100110 addr: -[sp]  %101110 addr: [sp
 %010111 addr: [rp]  %011111 addr: [rp]+  %100111 addr: -[rp]  %101111 addr: [rp
@@ -104,10 +104,10 @@ variable ext1       variable ext2       variable ext
 :  ndx: ( n "name" -- ) create , does> ( -- )
     ea (ndx) if ea' (ndx) effect-error endif @ ext @ +! ;
 
-$080F ndx: tos+     $480F ndx: r4+      $880F ndx: ip+      $C80F ndx: x4+
-$180F ndx: r1+      $580F ndx: r5+      $980F ndx: x1+      $D80F ndx: np+
-$280F ndx: r2+      $680F ndx: r6+      $A80F ndx: x2+      $E80F ndx: sp+
-$380F ndx: r3+      $780F ndx: r7+      $B80F ndx: x3+      $F80F ndx: rp+
+$080F ndx: tos+     $480F ndx: d4+      $880F ndx: ip+      $C80F ndx: a4+
+$180F ndx: d1+      $580F ndx: d5+      $980F ndx: a1+      $D80F ndx: np+
+$280F ndx: d2+      $680F ndx: d6+      $A80F ndx: a2+      $E80F ndx: sp+
+$380F ndx: d3+      $780F ndx: d7+      $B80F ndx: a3+      $F80F ndx: rp+
 
 : iw   ( -- ) ext @ dup @ $F7FF and swap ! ;        synonym ih iw
 : #] ( n -- ) ?shalf not 1 and %111000 + addr!  ext @ !  $8000 ;
