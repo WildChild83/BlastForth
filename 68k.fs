@@ -229,7 +229,8 @@ $E000 shift: asr,   $E001 shift: lsr,   $E002 shift: roxr,  $E003 shift: ror,
         #d' of <long>  nip  sreg $800 + r> + asm, asm, endof
         #m' of <byte> 2drop      $800   r> + ea @ + opsize+ asm, asm, ext1, endof
     invalid endcase clean ;
-$0000 bit: bittest, $0040 bit: bitchg,  $0080 bit: bitclr,  $00C0 bit: bitset,
+$0000 bit: bittest, aka btst,       $0040 bit: bitchg, aka bchg,
+$0080 bit: bitclr,  aka bclr,       $00C0 bit: bitset, aka bset,
 
 : math: ( opcode "name" -- ) create , does> ( arg1 arg2 -- )
     <word> @ >r 2arg case
@@ -252,7 +253,7 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
         #a' of nobyte nip dreg $B0C0 + opsize @ 4 and 6 lshift + imm, endof
         #m' of 2drop $0C00 ea @ + opsize+ asm, imm#, ext1, endof
         mm' of 2drop --? not effect-error (easd) $B108 opsize+ asm, endof
-    invalid endcase clean ;
+    invalid endcase clean ;  aka cmp,
 
 : (csize+) ( n -- n' ) opsize @ 2 and 5 lshift + ;
 : check, ( mem dreg -- )
@@ -260,7 +261,7 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
         dd' of sdreg $4100 + (csize+) asm, endof
         md' of nip dreg $4100 + (csize+) ea @ + asm, ext1, endof
         #d' of nip dreg $4100 + (csize+) imm, endof
-    invalid endcase clean ;
+    invalid endcase clean ;  aka chk,
 
 : (size+)  ( n -- n' ) opsize @ dup 2/ or 3 and 12 lshift + ;
 : (eadest) ( n ea -- n' ) @ dup dreg swap $38 and 3 lshift + + ;
@@ -310,11 +311,12 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
     1arg case
         d' of sreg opsize @ 4 = if $7000 else $4200 opsize+ endif + asm, endof
         m' of drop $4200 ea, endof
-    invalid endcase clean ;
+    invalid endcase clean ;  aka clr,
 
 : link, ( n # areg -- ) 
     <long> 2arg #a' <> invalid-error sreg $4E50 + asm, drop w imm#, clean ;
-: unlink, ( areg -- ) <long> 1arg a' <> invalid-error sreg $4E58 + asm, clean ;
+: unlink, ( areg -- )
+    <long> 1arg a' <> invalid-error sreg $4E58 + asm, clean ;  aka unlk,
 
 : swap, ( dreg -- ) <long> 1arg d' <> invalid-error sreg $4840 + asm, ;
 : stop,  ( n # -- ) <word> # <> invalid-error $4E72 asm, w imm#, ;
@@ -322,24 +324,25 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
 : illegal,   ( -- ) <long> $4AFC asm, ;
 : reset,     ( -- ) <long> $4E70 asm, ;
 : nop,       ( -- ) <long> $4E71 asm, ;
-: ireturn,   ( -- ) <long> $4E73 asm, ;
-: return,    ( -- ) <long> $4E75 asm, ;
+: ireturn,   ( -- ) <long> $4E73 asm, ;  aka rte,
+: return,    ( -- ) <long> $4E75 asm, ;  aka rts,
 : trapv,     ( -- ) <long> $4E76 asm, ;
-: ccreturn,  ( -- ) <long> $4E77 asm, ;
+: ccreturn,  ( -- ) <long> $4E77 asm, ;  aka rtr,
 
 : branch?, ( disp cc -- )
     $6000 +cc <word> swap ?shalf not disp-error
-    ?schar if $FF and + else swap asm, endif asm, clean ;
-: branch, ( disp -- ) yes branch?, ;
-: brasub, ( disp -- )  no branch?, ;
+    ?schar if $FF and + else swap asm, endif asm, clean ;  aka bra?,
+: branch, ( disp -- ) yes branch?, ;  aka bra,
+: brasub, ( disp -- )  no branch?, ;  aka bsr,
 
 : decbra?, ( reg disp cc -- )
-    <word> rot 1arg d' <> invalid-error sreg +cc $50C8 + asm, w imm#, clean ;
-: decbra, ( reg disp -- ) no decbra?, ;
+    <word> rot 1arg d' <> invalid-error
+    sreg +cc $50C8 + asm, w imm#, clean ;  aka dbra?,
+: decbra, ( reg disp -- ) no decbra?, ;    aka dbra,
 
 : jump: ( opcode "name" -- ) create , does> ( mem -- )
     @ swap 1arg m' <> invalid-error drop (ctrl) asm, ext1, clean ;
-$4EC0 jump: jump,   $4E80 jump: jumpsub,    
+$4EC0 jump: jump, aka jmp,      $4E80 jump: jumpsub, aka jsr,
 
 ( ---------------------------------------------------------------------------- )
 (       Move 'em                                                               )
@@ -395,9 +398,9 @@ $A000 constant [[
 : while  ( dest cc -- cc orig dest ) if rot ;
 : repeat ( cc orig dest -- )         again then ;
 
-: for ( n reg -- reg dest )
+: do ( n reg -- reg dest )
     1arg d' <> invalid-error swap 1- # third move, begin ;
-: next ( reg dest -- ) displacement decbra, ;
+: loop ( reg dest -- ) displacement decbra, ;
 
 : primitive,  ( addr -- ) #] jump, ;
 : subroutine, ( addr -- ) #] jumpsub, ;
