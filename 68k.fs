@@ -115,7 +115,7 @@ $380F ndx: d3+      $780F ndx: d7+      $B80F ndx: a3+      $F80F ndx: rp+
     ext @ dup >r @ ?dup-if
         $FF00 and swap ?schar not disp-error $FF and + r> !
     else ?shalf not disp-error $FFFF and r> ! endif ;
-: i] ( -- ) 0 +] ;
+: 0] ( -- ) 0 +] ;
 
 : <ext> ( ext ea n -- ext ea ) third @ swap 1 = if long, exit endif asm, ;
 : (ext) ( ext ea -- )
