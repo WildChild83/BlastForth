@@ -45,14 +45,14 @@ $3001 constant ccr  $3002 constant sr   $3003 constant usp
 ( ---------------------------------------------------------------------------- )
 (       Condition Codes                                                        )
 ( ---------------------------------------------------------------------------- )
-$4000     constant yes                  $4800     constant vclr
-$4100     constant no                   $4900     constant vset
-$4200     constant ugt                  $4A00 dup constant nclr constant pos
-$4300     constant ult=                 $4B00 dup constant nset constant neg
-$4400 dup constant cclr constant ugt=   $4C00     constant gt=
-$4500 dup constant cset constant ult    $4D00     constant lt
-$4600     constant z<>                  $4E00     constant gt
-$4700     constant z=                   $4F00     constant lt=
+$4000 constant yes                      $4800 constant vclr
+$4100 constant no                       $4900 constant vset
+$4200 constant ugt                      $4A00 constant nclr aka pos
+$4300 constant ult=                     $4B00 constant nset aka neg
+$4400 constant cclr aka ugt=            $4C00 constant gt=
+$4500 constant cset aka ult             $4D00 constant lt
+$4600 constant z<>                      $4E00 constant gt
+$4700 constant z=                       $4F00 constant lt=
 : +cc ( cc n -- n' ) swap $FFFFF0FF cleave $4000 <> cc-error  + ;
 
 ( ---------------------------------------------------------------------------- )
@@ -378,6 +378,16 @@ $A000 constant [[
 : rpeek, ( reg -- )  [rp]  swap move, ;
 :  inc,  ( reg -- )  1 # rot add, ;
 :  dec,  ( reg -- )  1 # rot sub, ;
+
+( ---------------------------------------------------------------------------- )
+(       Conditional Operation Synonyms                                         )
+( ---------------------------------------------------------------------------- )
+: set: ( cc "name" -- ) create , does> ( args.. -- ) @ set?, ;
+cclr set: scc,      z=  set: seq,       gt= set: sge,       gt set: sgt,
+cset set: scs,      z<> set: sne,       lt= set: sle,       lt set: slt,
+vclr set: svc,      pos set: spl,      ugt= set: shs,      ugt set: shi,
+vset set: svs,      neg set: smi,      ult= set: sls,      ult set: slo,
+yes  set: st,       no  set: sf,
 
 ( ---------------------------------------------------------------------------- )
 (       Flow Control                                                           )
