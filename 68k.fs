@@ -36,7 +36,7 @@
 ( ---------------------------------------------------------------------------- )
 (       Registers                                                              )
 ( ---------------------------------------------------------------------------- )
-$1000 constant tos  $1004 constant d4   $2008 constant ip   $200C constant a4
+$1000 constant tos  $1004 constant d4   $2008 constant tp   $200C constant a4
 $1001 constant d1   $1005 constant d5   $2009 constant a1   $200D constant np
 $1002 constant d2   $1006 constant d6   $200A constant a2   $200E constant sp
 $1003 constant d3   $1007 constant d7   $200B constant a3   $200F constant rp
@@ -91,7 +91,7 @@ variable ext1       variable ext2       variable ext
 : addr! ( n -- ) ea dup @ if drop ea' ext2 ext ! endif ! ;
 : addr: ( n "name" -- ) create , does> ( -- arg ) @ addr! $8000 ;
 
-%010000 addr: [ip]  %011000 addr: [ip]+  %100000 addr: -[ip]  %101000 addr: [ip
+%010000 addr: [tp]  %011000 addr: [tp]+  %100000 addr: -[tp]  %101000 addr: [tp
 %010001 addr: [a1]  %011001 addr: [a1]+  %100001 addr: -[a1]  %101001 addr: [a1
 %010010 addr: [a2]  %011010 addr: [a2]+  %100010 addr: -[a2]  %101010 addr: [a2
 %010011 addr: [a3]  %011011 addr: [a3]+  %100011 addr: -[a3]  %101011 addr: [a3
@@ -104,7 +104,7 @@ variable ext1       variable ext2       variable ext
 :  ndx: ( n "name" -- ) create , does> ( -- )
     ea (ndx) if ea' (ndx) effect-error endif @ ext @ +! ;
 
-$080F ndx: tos+     $480F ndx: d4+      $880F ndx: ip+      $C80F ndx: a4+
+$080F ndx: tos+     $480F ndx: d4+      $880F ndx: tp+      $C80F ndx: a4+
 $180F ndx: d1+      $580F ndx: d5+      $980F ndx: a1+      $D80F ndx: np+
 $280F ndx: d2+      $680F ndx: d6+      $A80F ndx: a2+      $E80F ndx: sp+
 $380F ndx: d3+      $780F ndx: d7+      $B80F ndx: a3+      $F80F ndx: rp+
