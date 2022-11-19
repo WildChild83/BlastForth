@@ -331,14 +331,14 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
 
 : branch?, ( disp cc -- )
     $6000 +cc <word> swap ?shalf not disp-error
-    ?schar if $FF and + else swap asm, endif asm, clean ;  aka bra?,
-: branch, ( disp -- ) yes branch?, ;  aka bra,
-: brasub, ( disp -- )  no branch?, ;  aka bsr,
+    ?schar if $FF and + else swap asm, endif asm, clean ;
+: branch, ( disp -- ) yes branch?, ;
+: brasub, ( disp -- )  no branch?, ;
 
 : decbra?, ( reg disp cc -- )
     <word> rot 1arg d' <> invalid-error
-    sreg +cc $50C8 + asm, w imm#, clean ;  aka dbra?,
-: decbra, ( reg disp -- ) no decbra?, ;    aka dbra,
+    sreg +cc $50C8 + asm, w imm#, clean ;
+: decbra, ( reg disp -- ) no decbra?, ;
 
 : jump: ( opcode "name" -- ) create , does> ( mem -- )
     @ swap 1arg m' <> invalid-error drop (ctrl) asm, ext1, clean ;
@@ -380,16 +380,6 @@ $A000 constant [[
 :  dec,  ( reg -- )  1 # rot sub, ;
 
 ( ---------------------------------------------------------------------------- )
-(       Conditional Operation Synonyms                                         )
-( ---------------------------------------------------------------------------- )
-: set: ( cc "name" -- ) create , does> ( args.. -- ) @ set?, ;
-cclr set: scc,      z=  set: seq,       gt= set: sge,       gt set: sgt,
-cset set: scs,      z<> set: sne,       lt= set: sle,       lt set: slt,
-vclr set: svc,      pos set: spl,      ugt= set: shs,      ugt set: shi,
-vset set: svs,      neg set: smi,      ult= set: sls,      ult set: slo,
-yes  set: st,       no  set: sf,
-
-( ---------------------------------------------------------------------------- )
 (       Flow Control                                                           )
 ( ---------------------------------------------------------------------------- )
 : displacement ( n -- n' ) asmsize - 2 - ;
@@ -410,7 +400,8 @@ yes  set: st,       no  set: sf,
 
 : do ( n reg -- reg dest )
     1arg d' <> invalid-error swap 1- # third move, begin ;
-: loop ( reg dest -- ) displacement decbra, ;
+: loop  ( reg dest -- ) displacement decbra, ;
+: loop? ( reg dest cc -- ) 1 xor >r displacement r> decbra?, ;
 
 : primitive,  ( addr -- ) #] jump, ;
 : subroutine, ( addr -- ) #] jumpsub, ;
