@@ -58,8 +58,8 @@ $4700     constant z=                   $4F00     constant lt=
 ( ---------------------------------------------------------------------------- )
 (       Operation Sizes                                                        )
 ( ---------------------------------------------------------------------------- )
-variable opsize                                 : b  1 opsize ! ;   synonym c b
-                                                : w  2 opsize ! ;   synonym h w
+variable opsize                                 : b  1 opsize ! ;   aka c
+                                                : w  2 opsize ! ;   aka h
 : nobyte ( -- ) opsize @ 1 = opsize-error ;
 : noword ( -- ) opsize @ 2 = opsize-error ;
 : nolong ( -- ) opsize @ 4 = opsize-error ;
@@ -187,7 +187,7 @@ $4000 single: negx,     $4400 single: neg,      $4600 single: not,
 : (status) ( arg1 arg2 opcode -- )
     >r 2arg #s' <> if r> (data) exit endif
     nip <status> 0 r> (and2) opsize+ imm, clean ;
-: eor, ( arg1 arg2 -- ) $B000 (status) ;            synonym xor, eor,
+: xor, ( arg1 arg2 -- ) $B000 (status) ;            aka eor,
 
 : (logic) ( arg1 arg2 opcode -- )
     >r 2arg md' = if nip dreg r> (and1) ea, clean exit endif r> (status) ;
@@ -388,7 +388,7 @@ $A000 constant [[
 : if ( cc -- cc orig ) 1 xor asmsize 0 asm, ;
 : then  ( cc orig -- )
     dup displacement ?schar not disp-error
-    $FF and rot $6000 +cc + swap asm! clean ;           synonym endif then
+    $FF and rot $6000 +cc + swap asm! clean ;   aka endif
 
 : ahead  ( -- cc orig )              no if ;
 : else   ( cc orig -- cc orig )      ahead 2swap then ;
