@@ -80,7 +80,7 @@ variable rom*       rom @ rom* !
 256 zeroes,                     s" SEGA GENESIS    " rom$,  \ 100 Console
                                 s" (C)WILD 2019    " rom$,  \ 110 Copyrght
 s" Japanese Name                                   " rom$,  \ 120 Domestic name
-s" American Name                                   " rom$,  \ 150 Int'l name
+s" Western Name                                    " rom$,  \ 150 Int'l name
                                   s" GM 00000001-01" rom$,  \ 180 Version #
                                                    0 romh,  \ 18E Checksum
                                 s" J               " rom$,  \ 190 I/O support

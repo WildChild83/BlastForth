@@ -20,8 +20,9 @@ get-order blast-wordlist swap 1+ set-order definitions
 :  @+ ( addr -- addr' n ) dup @ swap cell+ ;
 
 : >order     ( wid -- ) >r get-order r> swap 1+ set-order ;
-: third    ( a b c -- a b c a )   sp@ 2 cells + @ ;
-: fourth ( a b c d -- a b c d a ) sp@ 3 cells + @ ;
+: third    ( a b c -- a b c a )   2>r dup  2r> rot ;
+: fourth ( a b c d -- a b c d a ) 2>r over 2r> rot ;
+: ndrop ( xn..x1 n -- ) 0 ?do drop loop ;
 
 : cellcount ( addr -- addr' n ) dup cell+ swap @ ;
 : list,   ( xn..x1 n -- ) dup , 0 swap 1- ?do i roll , -1 +loop ;
@@ -43,19 +44,20 @@ variable glossptr     glossnames glossptr !
     nip count exit   then 2drop s" -" ;
 : (glossary) ( "name" -- ) get-order create list, does> ( -- ) list@ set-order ;
 :  Glossary  ( "name" -- ) 
-    save-input parse-name wordlist dup >r gloss+ restore-input throw
-    r> >order (glossary) ;
+    save-input parse-name wordlist dup >order gloss+ restore-input throw
+    (glossary) ;
 
 ( ---------------------------------------------------------------------------- )
 bl parse Forth  forth-wordlist gloss+
 bl parse Blast  blast-wordlist gloss+
-
 also Forth definitions previous   (glossary) Blast definitions
 
 :    {      ( -- ) also Forth ; immediate
 :   Forth   ( -- ) only Forth ;
 : >current< ( -- ) get-current glossname >type< space ;
 :   order   ( -- ) get-order 0 ?do glossname type space loop >current< ;
+
+: order> ( -- wid ) get-order over >r ndrop r> ;
 
 ( ---------------------------------------------------------------------------- )
 (       Basic Stuff                                                            )
@@ -73,7 +75,6 @@ synonym not  0=
 :  ?cell ( n -- n flag ) dup -2147483648 4294967296 within ;
 
 : cleave    ( n u -- n1 n2 ) 2dup invert and -rot and ;
-:  ndrop  ( xn..x1 n -- ) cells sp@ + cell+ sp! ;
 :  rdrop  ( R: n -- )     2r> nip >r ;
 : 2rdrop  ( R: n1 n2 -- ) r> 2r> 2drop >r ;
 : bounds  ( addr u -- limit index ) over + swap ;
@@ -81,14 +82,14 @@ synonym not  0=
 ( ---------------------------------------------------------------------------- )
 (       String Stuff                                                           )
 ( ---------------------------------------------------------------------------- )
-: ucase ( c -- c' ) dup [ char a char z 1+ ] 2literal within 32 and - ;
-:   c=  ( c1 c2 -- flag ) ucase swap ucase =  ;
-:   c<> ( c1 c2 -- flag ) ucase swap ucase <> ;
-:   1++ ( n1 n2 -- n1' n2' ) 1+ >r 1+ r> ;
-: str=  ( addr1 u1 addr2 u2 -- flag )
+: ucase    ( c -- c' )   dup [ char a char z 1+ ] 2literal within 32 and - ;
+: c=   ( c1 c2 -- flag ) ucase swap ucase =  ;
+: c<>  ( c1 c2 -- flag ) ucase swap ucase <> ;
+: 1++  ( n1 n2 -- n1' n2' ) 1+ >r 1+ r> ;
+: str= ( addr1 u1 addr2 u2 -- flag )
     rot over <> if 3 ndrop false exit endif
     bounds ?do count i c@ c<> if drop unloop false exit endif loop drop true ;
-: mem=  ( addr1 u1 addr2 u2 -- flag ) compare 0= ;
+: mem= ( addr1 u1 addr2 u2 -- flag ) compare 0= ;
 
 ( ---------------------------------------------------------------------------- )
 : .n ( n n' -- )

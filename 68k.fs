@@ -6,7 +6,7 @@
 
 ( ---------------------------------------------------------------------------- )
 (                                                                              )
-(       Dependencies                                                           )
+(       Dependencies:                                                          )
 (           - romfile.fs                                                       )
 (           - the following words must be defined:                             )
 (               asm,  asm!  asmsize                                            )
@@ -88,9 +88,9 @@ $5000 constant #
 ( ---------------------------------------------------------------------------- )
 variable ea         variable ea'
 variable ext1       variable ext2       variable ext
+
 : addr! ( n -- ) ea dup @ if drop ea' ext2 ext ! endif ! ;
 : addr: ( n "name" -- ) create , does> ( -- arg ) @ addr! $8000 ;
-
 %010000 addr: [tp]  %011000 addr: [tp]+  %100000 addr: -[tp]  %101000 addr: [tp
 %010001 addr: [a1]  %011001 addr: [a1]+  %100001 addr: -[a1]  %101001 addr: [a1
 %010010 addr: [a2]  %011010 addr: [a2]+  %100010 addr: -[a2]  %101010 addr: [a2
@@ -103,16 +103,15 @@ variable ext1       variable ext2       variable ext
 : (ndx) ( addr -- flag ) dup @ $38 and $28 <> dup if nip exit endif $8 rot +! ;    
 :  ndx: ( n "name" -- ) create , does> ( -- )
     ea (ndx) if ea' (ndx) effect-error endif @ ext @ +! ;
-
 $080F ndx: tos+     $480F ndx: d4+      $880F ndx: tp+      $C80F ndx: a4+
 $180F ndx: d1+      $580F ndx: d5+      $980F ndx: a1+      $D80F ndx: np+
 $280F ndx: d2+      $680F ndx: d6+      $A80F ndx: a2+      $E80F ndx: sp+
 $380F ndx: d3+      $780F ndx: d7+      $B80F ndx: a3+      $F80F ndx: rp+
+: ih ( -- ) ext @ dup @ $F7FF and swap ! ;   aka iw
 
-: iw   ( -- ) ext @ dup @ $F7FF and swap ! ;        synonym ih iw
-: #] ( n -- ) ?shalf not 1 and %111000 + addr!  ext @ !  $8000 ;
-: +] ( n -- )
-    ext @ dup >r @ ?dup-if
+: [#] ( n -- ) ?shalf not 1 and %111000 + addr!  ext @ !  $8000 ;
+:  +] ( n -- )
+    ext @ dup >r @ ?dup if
         $FF00 and swap ?schar not disp-error $FF and + r> !
     else ?shalf not disp-error $FFFF and r> ! endif ;
 : 0] ( -- ) 0 +] ;
@@ -270,12 +269,12 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
         dd' of sdreg (size+) asm, endof
         ad' of adreg (size+) asm, endof
         da' of sdreg (size+) $40 + asm, endof
-        aa' of adreg (size+) $44 + asm, endof
+        aa' of adreg (size+) $40 + asm, endof
         md' of  nip dreg (size+) ea @ + asm, ext1, endof
         dm' of drop sreg (size+) ea  (eadest) asm, ext1, endof
         mm' of 2drop   0 (size+) ea' (eadest) ea @ + asm, ext1, ext2, endof
         ma' of  nip dreg (size+) $40 + ea @ + asm, ext1, endof
-        am' of drop areg (size+) ea @ + asm, ext1, endof
+        am' of drop areg (size+) ea  (eadest) asm, ext1, endof
         #d' of nip dreg over ?schar not nip opsize @ 4 <> or
                if (size+) imm, else swap $FF and + $7000 + asm, endif endof
         #a' of  nip dreg (size+) $40 + imm, endof
@@ -376,6 +375,7 @@ $A000 constant [[
 : rpoke, ( reg -- )  [rp]       move, ;
 : rpop,  ( reg -- )  [rp]+ swap move, ;
 : rpeek, ( reg -- )  [rp]  swap move, ;
+:  read, ( reg -- )  [tp]+ swap move, ;
 :  inc,  ( reg -- )  1 # rot add, ;
 :  dec,  ( reg -- )  1 # rot sub, ;
 
@@ -386,9 +386,9 @@ $A000 constant [[
 
 : begin    ( -- dest ) asmsize ;
 : again    ( dest -- ) displacement branch, ;
-: until ( dest cc -- ) 1 xor >r displacement r> branch?, ;
+: until ( dest cc -- ) $100 xor >r displacement r> branch?, ;
 
-: if ( cc -- cc orig ) 1 xor asmsize 0 asm, ;
+: if ( cc -- cc orig ) $100 xor asmsize 0 asm, ;
 : then  ( cc orig -- )
     dup displacement ?schar not disp-error
     $FF and rot $6000 +cc + swap asm! clean ;   aka endif
@@ -401,10 +401,10 @@ $A000 constant [[
 : do ( n reg -- reg dest )
     1arg d' <> invalid-error swap 1- # third move, begin ;
 : loop  ( reg dest -- ) displacement decbra, ;
-: loop? ( reg dest cc -- ) 1 xor >r displacement r> decbra?, ;
+: loop? ( reg dest cc -- ) $100 xor >r displacement r> decbra?, ;
 
-: primitive,  ( addr -- ) #] jump, ;
-: subroutine, ( addr -- ) #] jumpsub, ;
+: primitive,  ( addr -- ) [#] jump, ;
+: subroutine, ( addr -- ) [#] jumpsub, ;
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
@@ -413,6 +413,7 @@ $A000 constant [[
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
+
 
 
 
