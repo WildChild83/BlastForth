@@ -308,7 +308,8 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
 
 : clear, ( mem -- )
     1arg case
-        d' of sreg opsize @ 4 = if $7000 else $4200 opsize+ endif + asm, endof
+        d' of opsize @ 4 =
+              if dreg $7000 else sreg $4200 opsize+ endif + asm, endof
         m' of drop $4200 ea, endof
     invalid endcase clean ;  aka clr,
 

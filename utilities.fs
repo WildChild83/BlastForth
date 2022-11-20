@@ -94,12 +94,12 @@ synonym not  0=
 ( ---------------------------------------------------------------------------- )
 : .n ( n n' -- )
     ." ." >r s>d <# #s #> r@ min r> over - 0 max 0 ?do ." 0" loop type space ;
-: megabytes. ( n -- )
+: .megabytes ( n -- )
     1 megabytes /mod 0 .r   1000000 $100000 */ 2 .n   ." Megabytes " ;
-: kilobytes. ( n -- )
-    dup 1 megabytes > if megabytes. exit endif
+: .kilobytes ( n -- )
+    dup 1 megabytes > if .megabytes exit endif
     1 kilobytes /mod 0 .r   1000 $400  */ 2 .n   ." kilobytes " ;
-: bytes. ( n -- ) dup 1 kilobytes > if kilobytes. exit endif   . ." bytes" ;
+: .bytes ( n -- ) dup 1 kilobytes > if .kilobytes exit endif   . ." bytes" ;
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

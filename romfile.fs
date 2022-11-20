@@ -41,13 +41,12 @@ variable rom*       rom @ rom* !
 :  romsize ( -- u ) rom* @ rom @ - ;
 : alignrom   ( -- ) rom* @ 1 and rom* +! ;
 :  freerom   ( -- ) rom  @ free throw   rom off  rom* off ;
-: romstats   ( -- ) romsize bytes. ;
+: romstats   ( -- ) romsize .bytes ;
 : printrom   ( -- ) rom* @ rom @ 512 + ?do i c@ hex. loop cr romstats freerom ;
 
 : romfile  ( addr u -- )
     2dup type ." , "   w/o bin create-file throw >r
-    rom @ rom* @ over - r@ write-file throw
-    r> close-file throw
+    rom @ rom* @ over - r@ write-file throw   r> close-file throw
     romstats freerom   cr depth if .s cr endif ;
 : romfile: ( "name" -- ) parse-name romfile ;
 : romfile" ( "name" -- ) [char] " parse romfile ;
