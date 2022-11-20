@@ -205,8 +205,9 @@ $C200 logic: and,       $8000 logic: or,
         da' of nobyte sdreg r> (and1) opmode+ asm, endof
         ad' of nobyte adreg r> (and1) opsize+ asm, endof
         aa' of nobyte adreg r> (and1) opmode+ $4 + asm, endof
-        #a' of nobyte  dreg r> (and1) opmode+ imm, endof
         md' of    nip  dreg r> (and1) ea, endof
+        #a' of nobyte nip dreg r> (and1) opmode+ imm, endof
+        ma' of nobyte nip dreg r> (and1) opmode+ ea, endof
         drop r> (data) exit
     endcase clean ;
 $D600 $5000 arithmetic: add,        $9401 $5100 arithmetic: sub,
