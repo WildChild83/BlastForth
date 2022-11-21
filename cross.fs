@@ -29,6 +29,7 @@ Assembler68k wid { constant asm68k-wid }
 { : componly, ( addr -- ) compiling? not -14 and throw  @ rom, ; }
 { :    code ( "name" -- ) create PC , doprim, asm does> ( -- ) componly, ; }
 { : rawcode ( "name" -- ) create PC , asm does> ( -- romaddr ) @ ; }
+{ :    anon     ( -- xt ) PC doprim, asm ; }
 
 Assembler68k definitions
 { synonym end } ( -- ) }
@@ -247,85 +248,57 @@ code defer! ( xt1 xt2 -- )
  4 constant cell
  2 constant half
 
-code  (2*)  1 # tos lsl, next
-code  (4*)  2 # tos lsl, next
-code  (8*)  3 # tos lsl, next
-code  (2/)  1 # tos asr, next
-code  (4/)  2 # tos asr, next
-code  (8/)  3 # tos asr, next
-code   (+)  [sp]+ tos add, next
-code   (-)  tos neg, [sp]+ tos add, next
-code  (1+)  tos inc, next
-code  (1-)  tos dec, next
-code  (2+)  2 # tos add, next
-code  (2-)  2 # tos sub, next
-code  (4+)  4 # tos add, next
-code  (4-)  4 # tos sub, next
-code  (8+)  8 # tos add, next
-code  (8-)  8 # tos sub, next
+{ : host/target: ( hostxt targetxt "name" -- ) create , ,
+    does> ( .. -- ) compiling? if @ rom, else cell+ @ execute endif ; }
 
-{ : 2*   ( n -- n' ) compiling? if (2*) exit endif 2* ; }       aka halves
-{ : 4*   ( n -- n' ) compiling? if (4*) exit endif 2 lshift ; } aka cells
-{ : 8*   ( n -- n' ) compiling? if (8*) exit endif 3 lshift ; }
-{ : 2/   ( n -- n' ) compiling? if (2/) exit endif 2/ ; }       aka half/
-{ : 4/   ( n -- n' ) compiling? if (4/) exit endif 2/ 2/ ; }    aka cell/
-{ : 8/   ( n -- n' ) compiling? if (8/) exit endif 2/ 2/ 2/ ; }
-{ :  + ( n n -- n' ) compiling? if  (+) exit endif   + ; }
-{ :  - ( n n -- n' ) compiling? if  (-) exit endif   - ; }
-{ : 1+ ( n n -- n' ) compiling? if (1+) exit endif  1+ ; }      aka char+
-{ : 1- ( n n -- n' ) compiling? if (1-) exit endif  1- ; }      aka char-
-{ : 2+ ( n n -- n' ) compiling? if (2+) exit endif 2 + ; }      aka half+
-{ : 2- ( n n -- n' ) compiling? if (2-) exit endif 2 - ; }      aka half-
-{ : 4+ ( n n -- n' ) compiling? if (4+) exit endif 4 + ; }      aka cell+
-{ : 4- ( n n -- n' ) compiling? if (4-) exit endif 4 - ; }      aka cell-
-{ : 8+ ( n n -- n' ) compiling? if (8+) exit endif 8 + ; }
-{ : 8- ( n n -- n' ) compiling? if (8-) exit endif 8 - ; }
+{ ' 2* }    anon 1 # tos lsl, next              host/target: 2*     aka halves
+{ ' 4* }    anon 2 # tos lsl, next              host/target: 4*     aka cells
+{ ' 8* }    anon 3 # tos lsl, next              host/target: 8*
+{ ' 2/ }    anon 1 # tos asr, next              host/target: 2/     aka half/
+{ :noname 2/ 2/ ; }    anon 2 # tos asr, next   host/target: 4/     aka cell/
+{ :noname 2/ 2/ 2/ ; } anon 3 # tos asr, next   host/target: 8/
+{ '  + }    anon          [sp]+ tos add, next   host/target:  +
+{ '  - }    anon tos neg, [sp]+ tos add, next   host/target:  -
+{ ' 1+ }    anon     tos inc, next              host/target: 1+     aka char+
+{ ' 1- }    anon     tos dec, next              host/target: 1-     aka char-
+{ ' 2+ }    anon 2 # tos add, next              host/target: 2+     aka half+
+{ ' 2- }    anon 2 # tos sub, next              host/target: 2-     aka half-
+{ ' 4+ }    anon 4 # tos add, next              host/target: 4+     aka cell+
+{ ' 4- }    anon 4 # tos sub, next              host/target: 4-     aka cell-
+{ ' 8+ }    anon 8 # tos add, next              host/target: 8+
+{ ' 8- }    anon 8 # tos sub, next              host/target: 8-
 
-code (umin) d1 pop, d1 tos comp, ugt if d1 tos move, endif next
-code (umax) d1 pop, d1 tos comp, ult if d1 tos move, endif next
-code  (min) d1 pop, d1 tos comp,  gt if d1 tos move, endif next
-code  (max) d1 pop, d1 tos comp,  lt if d1 tos move, endif next
-code  (abs) tos test, neg if tos neg, endif next
+{ ' umin }
+anon d1 pop, d1 tos comp, ugt if d1 tos move, endif next    host/target: umin
+{ ' umax }
+anon d1 pop, d1 tos comp, ult if d1 tos move, endif next    host/target: umax
+{ '  min }
+anon d1 pop, d1 tos comp,  gt if d1 tos move, endif next    host/target: min
+{ '  max }
+anon d1 pop, d1 tos comp,  lt if d1 tos move, endif next    host/target: max
+{ '  abs }
+anon tos test, neg if tos neg, endif next                   host/target: abs
 
-{ : umin ( n n -- n ) compiling? if (umin) exit endif umin ; }
-{ : umax ( n n -- n ) compiling? if (umax) exit endif umax ; }
-{ :  min ( n n -- n ) compiling? if  (min) exit endif  min ; }
-{ :  max ( n n -- n ) compiling? if  (max) exit endif  max ; }
-{ :  abs ( n n -- n ) compiling? if  (abs) exit endif  abs ; }
+{ ' lshift }    anon d1 pop, tos d1 lsl, d1 tos move, next  host/target: lshift
+{ ' rshift }    anon d1 pop, tos d1 lsr, d1 tos move, next  host/target: rshift
+{ ' invert }    anon tos not, next                          host/target: invert
+{ ' negate }    anon tos neg, next                          host/target: negate
+{ ' and }       anon [sp]+ tos and, next                    host/target: and
+{ '  or }       anon [sp]+ tos  or, next                    host/target:  or
+{ ' xor }       anon [sp]+ tos xor, next                    host/target: xor
 
-code (lshift) d1 pop, tos d1 lsl, d1 tos move, next
-code (rshift) d1 pop, tos d1 lsr, d1 tos move, next
-code (and)    [sp]+ tos and, next
-code  (or)    [sp]+ tos or,  next
-code (xor)    d1 pop, d1 tos xor, next
-code (invert) tos not, next
-code (negate) tos neg, next
+{ ' swap }      anon d1 pop, tos push, d1 tos move, next    host/target: swap
+{ ' drop }      anon tos pop, next                          host/target: drop
+{ ' dup  }      anon tos push, next                         host/target: dup
+{ ' over }      anon d1 peek, tos push, d1 tos move, next   host/target: over
+{ ' nip  }      anon cell # sp add, next                    host/target: nip
+{ ' tuck }      anon d1 pop, tos push, d1 push, next        host/target: tuck
+{ '  rot }      anon d1 pop, d2 pop, d1 push, tos push, d2 tos move, next
+host/target:  rot
+{ ' -rot }      anon d1 pop, d2 pop, tos push, d2 push, d1 tos move, next
+host/target: -rot
 
-{ : lshift ( n u -- n' ) compiling? if (lshift) exit endif lshift ; }
-{ : rshift ( n u -- n' ) compiling? if (rshift) exit endif rshift ; }
-{ :  and   ( n n -- n' ) compiling? if  (and)   exit endif  and   ; }
-{ :   or   ( n n -- n' ) compiling? if   (or)   exit endif   or   ; }
-{ :  xor   ( n n -- n' ) compiling? if  (xor)   exit endif  xor   ; }
-{ : invert ( n u -- n' ) compiling? if (invert) exit endif invert ; }
-{ : negate ( n u -- n' ) compiling? if (negate) exit endif negate ; }
-
-code (swap) d1 pop, tos push, d1 tos move, next
-code (drop) tos pop, next
-code  (dup) tos push, next
-code (over) d1 peek, tos push, d1 tos move, next
-code  (nip) cell # sp add, next
-code (tuck) d1 pop, tos push, d1 push, next
-code  (rot) d1 pop, d2 pop, d1 push, tos push, d2 tos move, next
-code (-rot) d1 pop, d2 pop, tos push, d2 push, d1 tos move, next
-
-{ : swap   ( a b -- b a )   compiling? if (swap) exit endif swap ; }
-{ : drop     ( a -- )       compiling? if (drop) exit endif drop ; }
-{ :  dup     ( a -- a a )   compiling? if  (dup) exit endif  dup ; }
-{ : over   ( a b -- a b a ) compiling? if (over) exit endif over ; }
-{ :  nip   ( a b -- b )     compiling? if  (nip) exit endif  nip ; }
-{ : tuck   ( a b -- a )     compiling? if (tuck) exit endif tuck ; }
-{ :  rot ( a b c -- b c a ) compiling? if  (rot) exit endif  rot ; }
-{ : -rot ( a b c -- c a b ) compiling? if (-rot) exit endif -rot ; }
+{ :noname ; }   anon next   host/target: noop       aka chars
 
 ( ---------------------------------------------------------------------------- )
 (       Dumb Words  [aka "compile-only"]                                       )
@@ -353,7 +326,9 @@ code lhrotate   d1 pop, tos d1 h rol, d1 tos move, next
 code rhrotate   d1 pop, tos d1 h ror, d1 tos move, next
 code lcrotate   d1 pop, tos d1 c rol, d1 tos move, next
 code rcrotate   d1 pop, tos d1 c ror, d1 tos move, next
+
 code 16rotate   tos swap, next
+synonym 32rotate swap
 
 ( ---------------------------------------------------------------------------- )
 code 2drop  cell # sp add, tos pop, next
@@ -362,9 +337,12 @@ code 2over  tos push, [sp 2 cells +] tos move, [sp 3 cells +] push, next
 code 2nip   d1 pop, 2 cells # sp add, d1 push, next
 code 2tuck  [sp]+ [[ d1 d2 d3 ]] movem, d1 push, tos push,
             [[ d1 d2 d3 ]] -[sp] movem, next
+code 2swap  d1 pop, d2 pop, d3 pop, d1 push,
+            tos push, d3 push, d2 tos move, next
 
-code 2swap
-    d1 pop, d2 pop, d3 pop, d1 push, tos push, d3 push, d2 tos move, next
+( ---------------------------------------------------------------------------- )
+code   mux  tos d1 move, [sp]+ tos and, d1 not, [sp]+ d1 and, d1 tos or, next
+code demux  tos d1 move, [sp] tos and, d1 not, d1 [sp] and, next
 
 ( ---------------------------------------------------------------------------- )
 code ms ( n -- )
