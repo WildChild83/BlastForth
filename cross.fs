@@ -14,7 +14,9 @@
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
-{   create state false ,    : compiling? state @ ;   }
+{ create state   false , }
+{ : compiling? state @ ; }
+{ : target, ( romaddr -- ) compiling? not -14 and throw  @ rom, ; }
 
 ( ---------------------------------------------------------------------------- )
 (       A7=Return Stack     A6=Data Stack       A5=Thread Pointer              )
@@ -25,9 +27,8 @@ Forth definitions
 { : doprim, ( -- ) PC 4 + rom, ; }
 
 Assembler68k wid { constant asm68k-wid }
-{ :    asm         ( -- ) clean alignrom asm68k-wid >order ; }
-{ : componly, ( addr -- ) compiling? not -14 and throw  @ rom, ; }
-{ :    code ( "name" -- ) create PC , doprim, asm does> ( -- ) componly, ; }
+{ :     asm        ( -- ) clean alignrom asm68k-wid >order ; }
+{ :    code ( "name" -- ) create PC , doprim, asm does> ( -- ) target, ; }
 { : rawcode ( "name" -- ) create PC , asm does> ( -- romaddr ) @ ; }
 { :    anon     ( -- xt ) PC doprim, asm ; }
 
@@ -37,6 +38,8 @@ Assembler68k definitions
 { : next  ( -- ) next, end  ; }
 
 Forth definitions
+{ : host/target: ( hostxt targetxt "name" -- ) create , ,
+    does> ( .. -- ) compiling? if @ rom, else cell+ @ execute endif ; }
 
 ( ---------------------------------------------------------------------------- )
 (       ROM Data Areas                                                         )
@@ -94,7 +97,7 @@ asm { : semantics> ( -- addr ) tos push, a4 tos move, next: ; } end
 
 asm data docolon& ( -- ) tp rpush, a4 tp move, next
 { : ; ( -- ) } exit state { off ; }
-{ : : ( "name" -- ) create docolon& codefield, } ] { does> ( -- ) componly, ; }
+{ : : ( "name" -- ) create docolon& codefield, } ] { does> ( -- ) target, ; }
 
 ( ---------------------------------------------------------------------------- )
 (       Constants                                                              )
@@ -248,15 +251,12 @@ code defer! ( xt1 xt2 -- )
  4 constant cell
  2 constant half
 
-{ : host/target: ( hostxt targetxt "name" -- ) create , ,
-    does> ( .. -- ) compiling? if @ rom, else cell+ @ execute endif ; }
-
 { '  + }    anon          [sp]+ tos add, next   host/target:  +
 { '  - }    anon tos neg, [sp]+ tos add, next   host/target:  -
-{ ' 1+ }    anon     tos inc, next              host/target: 1+     aka char+
-{ ' 1- }    anon     tos dec, next              host/target: 1-     aka char-
-{ ' 2* }    anon 1 # tos lsl, next              host/target: 2*     aka halves
-{ ' 2/ }    anon 1 # tos asr, next              host/target: 2/     aka half/
+{ ' 1+ }               anon     tos inc, next   host/target: 1+     aka char+
+{ ' 1- }               anon     tos dec, next   host/target: 1-     aka char-
+{ ' 2* }               anon 1 # tos lsl, next   host/target: 2*     aka halves
+{ ' 2/ }               anon 1 # tos asr, next   host/target: 2/     aka half/
 { :noname 2* 2*    ; } anon 2 # tos lsl, next   host/target: 4*     aka cells
 { :noname 2/ 2/    ; } anon 2 # tos asr, next   host/target: 4/     aka cell/
 { :noname 2* 2* 2* ; } anon 3 # tos lsl, next   host/target: 8*
@@ -268,17 +268,7 @@ code defer! ( xt1 xt2 -- )
 { :noname 8 + ; }      anon 8 # tos add, next   host/target: 8+
 { :noname 8 - ; }      anon 8 # tos sub, next   host/target: 8-
 
-{ ' umin }  anon d1 pop, d1 tos comp,
-                ugt if d1 tos move, endif next  host/target: umin
-{ ' umax }  anon d1 pop, d1 tos comp,
-                ult if d1 tos move, endif next  host/target: umax
-{ '  min }  anon d1 pop, d1 tos comp, 
-                 gt if d1 tos move, endif next  host/target: min
-{ '  max }  anon d1 pop, d1 tos comp, 
-                 lt if d1 tos move, endif next  host/target: max
-{ '  abs }  anon tos test,
-                neg if tos neg, endif next      host/target: abs
-
+{ '  abs }      anon tos test, neg if tos neg, endif next   host/target: abs
 { ' lshift }    anon d1 pop, tos d1 lsl, d1 tos move, next  host/target: lshift
 { ' rshift }    anon d1 pop, tos d1 lsr, d1 tos move, next  host/target: rshift
 { ' invert }    anon tos not, next                          host/target: invert
@@ -295,9 +285,21 @@ code defer! ( xt1 xt2 -- )
 { ' tuck }      anon d1 pop, tos push, d1 push, next        host/target: tuck
 
 { '  rot }      anon d1 pop, d2 pop, d1 push,
-                    tos push, d2 tos move, next             host/target:  rot
+                    tos push, d2 tos move, next     host/target:  rot
 { ' -rot }      anon d1 pop, d2 pop, tos push, 
-                     d2 push, d1 tos move, next             host/target: -rot
+                     d2 push, d1 tos move, next     host/target: -rot
+{ ' umin }      anon d1 pop, d1 tos comp,
+                    ugt if d1 tos move, endif next  host/target: umin
+{ ' umax }      anon d1 pop, d1 tos comp,
+                    ult if d1 tos move, endif next  host/target: umax
+{ '  min }      anon d1 pop, d1 tos comp, 
+                     gt if d1 tos move, endif next  host/target: min
+{ '  max }      anon d1 pop, d1 tos comp, 
+                     lt if d1 tos move, endif next  host/target: max
+{ ' 0= }        anon tos test, tos z= set?,
+                    tos w ext, tos ext, next        host/target:  0=  aka not
+{ ' 0<> }       anon tos test, tos z<> set?,
+                    tos w ext, tos ext, next        host/target:  0<> aka flag
 
 { :noname ; }   anon next   host/target: noop       aka chars
 
@@ -315,32 +317,6 @@ code  c!  tos a1 move, 3 # a1 add, [a1] c pop, tos pop, next
 code  2@  tos a1 move, [a1]+ tos move, [a1] push, next
 code  2!  tos a1 move, [a1]+ pop, [a1]+ pop, tos pop, next
 
-( ---------------------------------------------------------------------------- )
-code d+     d1 pop, d2 pop, [sp]+ d1 add, d2 tos addx, d1 push, next
-code d-     d1 pop, d2 pop, d1 neg, tos neg,
-            [sp]+ d1 add, d2 tos addx, d1 push, next
-
-code d2*    [sp] lsl, 1 # tos roxl, next
-code d2/    1 # tos asr, [sp] roxr, next
-
-code dlshift    next
-code drshift    next
-code dnegate    next
-code dinvert    next
-code dabs       next
-
-code arshift    d1 pop, tos d1   asr, d1 tos move, next
-code lrotate    d1 pop, tos d1   rol, d1 tos move, next
-code rrotate    d1 pop, tos d1   ror, d1 tos move, next
-code lhrotate   d1 pop, tos d1 h rol, d1 tos move, next
-code rhrotate   d1 pop, tos d1 h ror, d1 tos move, next
-code lcrotate   d1 pop, tos d1 c rol, d1 tos move, next
-code rcrotate   d1 pop, tos d1 c ror, d1 tos move, next
-
-code 16rotate   tos swap, next
-synonym 32rotate swap
-
-( ---------------------------------------------------------------------------- )
 code 2drop  cell # sp add, tos pop, next
 code 2dup   d1 peek, tos push, d1 push, next
 code 2over  tos push, [sp 2 cells +] tos move, [sp 3 cells +] push, next
@@ -350,11 +326,40 @@ code 2tuck  [sp]+ [[ d1 d2 d3 ]] movem, d1 push, tos push,
 code 2swap  d1 pop, d2 pop, d3 pop, d1 push,
             tos push, d3 push, d2 tos move, next
 
+code dinvert    [sp] not, tos not,  next
+code dnegate    [sp] neg, tos negx, next
+code dabs       tos test, neg if [sp] neg, tos negx, endif next
+code d2*        [sp] lsl, 1 # tos roxl, next
+code d2/        1 # tos asr, [sp] roxr, next
+code d+         d1 pop, d2 pop, [sp]+ d1 add, d2 tos addx, d1 push, next
+code d-         d1 pop, d2 pop, d1 neg, tos neg,
+                [sp]+ d1 add, d2 tos addx, d1 push, next
+
+code arshift    d1 pop, tos d1   asr, d1 tos move, next
+code lrotate    d1 pop, tos d1   rol, d1 tos move, next
+code rrotate    d1 pop, tos d1   ror, d1 tos move, next
+code lhrotate   d1 pop, tos d1 h rol, d1 tos move, next
+code rhrotate   d1 pop, tos d1 h ror, d1 tos move, next
+code lcrotate   d1 pop, tos d1 c rol, d1 tos move, next
+code rcrotate   d1 pop, tos d1 c ror, d1 tos move, next
+
+code dlshift
+    31 # tos comp, gt if 32 # tos sub, 4 # sp add, d1 peek,
+        tos d1 lsl, [sp] clear, d1 tos move, next, endif
+    d1 pop, d2 pop, -1 # d3 move, tos d1 lsl, tos d2 rol, tos d3 lsl,
+    d3 tos move, tos not, d2 tos and, d1 tos or, d3 d2 and, d2 push, next
+code drshift
+    31 # tos cmp, gt if 32 # tos sub, d1 pop, 4 # sp add,
+        tos d1 lsr, d1 push, tos clear, next, endif
+    d1 pop, d2 pop, -1 # d3 move, tos d1 ror, tos d2 lsr, tos d3 lsr,
+    d3 tos move, d1 tos and, d3 not, d3 d1 and, d1 d2 or, d2 push, next
+
+code 16rotate   tos swap, next          synonym 32drotate swap
+
 ( ---------------------------------------------------------------------------- )
 code   mux  tos d1 move, [sp]+ tos and, d1 not, [sp]+ d1 and, d1 tos or, next
 code demux  tos d1 move, [sp]  tos and, d1 not, d1 [sp]  and, next
 
-( ---------------------------------------------------------------------------- )
 code ms ( n -- )
     tos test, gt if tos begin 708 d1 do loop loop endif tos pop, next
 
