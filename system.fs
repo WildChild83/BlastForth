@@ -3,10 +3,42 @@
 (       Blast Forth's Root File                                                )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
-include glossaries.fs  \ glossaries avoid naming conflicts
-include romfile.fs     \ binary file output and system file header
-include 68k.fs         \ Motorola 68000 assembler, Forth style
-include cross.fs       \ cross-compiler and core word set
+include system/glossary.fs
+
+( ---------------------------------------------------------------------------- )
+{  1  megabytes constant SizeOfROM }    \ default is 1 MB, max supported 4 MB
+include system/romfile.fs
+
+( ---------------------------------------------------------------------------- )
+(       Sega ROM Header                                                        )
+( ---------------------------------------------------------------------------- )
+( Console )     { s" SEGA GENESIS    " } string,
+( Copyright )   { s" (C)NAME 20xx    " } string,
+( Domestic )    { s" Japanese Name                                   " } string,
+( Foreign )     { s" Western Name                                    " } string,
+( Version # )   { s" GM 00000001-01" } string,
+( Checksum )         0 h,
+( I/O Support ) { s" J               " } string,
+( ROM Start )        0 ,
+( ROM End )     { SizeOfROM 1- } ,
+( RAM Start )  $FF0000 ,
+( RAM End )    $FFFFFF ,
+( SRAM? )            0 ,
+( -- )               0 ,
+( SRAM Start )       0 ,
+( SRAM End )         0 ,
+( -- )           0 , 0 ,
+( Notes )     { s"                                         " } string,
+( Countries ) { s" JUE             " } string,
+
+( ---------------------------------------------------------------------------- )
+\ warn if header is the wrong size (comment this line to disable the warning)
+{ romsize 512 <> [if] .( Incorrect Sega ROM Header. ) [then] } 
+
+( ---------------------------------------------------------------------------- )
+include system/68k.fs       \ Motorola 68000 assembler, Forth style
+include system/cross.fs     \ cross-compiler, standard defining words
+include system/core.fs      \ all the most important Forth words
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
