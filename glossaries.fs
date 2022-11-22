@@ -13,7 +13,7 @@ only Forth definitions   decimal
 : list@  ( addr -- n*x  n ) cellcount dup >r 0 ?do  @+ loop drop r> ;
 : list@@ ( addr -- n*x  n ) cellcount dup >r 0 ?do @@+ loop drop r> ;
 
-[undefined] string, [if] : string, 2dup c, here swap dup allot cmove ; [then]
+[undefined] string, [if] : string, dup c, here swap dup allot cmove ; [then]
 
 ( ---------------------------------------------------------------------------- )
 (       Copy words from one Glossary to another                                )
