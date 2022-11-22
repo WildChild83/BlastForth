@@ -251,33 +251,33 @@ code defer! ( xt1 xt2 -- )
 { : host/target: ( hostxt targetxt "name" -- ) create , ,
     does> ( .. -- ) compiling? if @ rom, else cell+ @ execute endif ; }
 
-{ ' 2* }    anon 1 # tos lsl, next              host/target: 2*     aka halves
-{ ' 4* }    anon 2 # tos lsl, next              host/target: 4*     aka cells
-{ ' 8* }    anon 3 # tos lsl, next              host/target: 8*
-{ ' 2/ }    anon 1 # tos asr, next              host/target: 2/     aka half/
-{ :noname 2/ 2/ ; }    anon 2 # tos asr, next   host/target: 4/     aka cell/
-{ :noname 2/ 2/ 2/ ; } anon 3 # tos asr, next   host/target: 8/
 { '  + }    anon          [sp]+ tos add, next   host/target:  +
 { '  - }    anon tos neg, [sp]+ tos add, next   host/target:  -
 { ' 1+ }    anon     tos inc, next              host/target: 1+     aka char+
 { ' 1- }    anon     tos dec, next              host/target: 1-     aka char-
-{ ' 2+ }    anon 2 # tos add, next              host/target: 2+     aka half+
-{ ' 2- }    anon 2 # tos sub, next              host/target: 2-     aka half-
-{ ' 4+ }    anon 4 # tos add, next              host/target: 4+     aka cell+
-{ ' 4- }    anon 4 # tos sub, next              host/target: 4-     aka cell-
-{ ' 8+ }    anon 8 # tos add, next              host/target: 8+
-{ ' 8- }    anon 8 # tos sub, next              host/target: 8-
+{ ' 2* }    anon 1 # tos lsl, next              host/target: 2*     aka halves
+{ ' 2/ }    anon 1 # tos asr, next              host/target: 2/     aka half/
+{ :noname 2* 2*    ; } anon 2 # tos lsl, next   host/target: 4*     aka cells
+{ :noname 2/ 2/    ; } anon 2 # tos asr, next   host/target: 4/     aka cell/
+{ :noname 2* 2* 2* ; } anon 3 # tos lsl, next   host/target: 8*
+{ :noname 2/ 2/ 2/ ; } anon 3 # tos asr, next   host/target: 8/
+{ :noname 2 + ; }      anon 2 # tos add, next   host/target: 2+     aka half+
+{ :noname 2 - ; }      anon 2 # tos sub, next   host/target: 2-     aka half-
+{ :noname 4 + ; }      anon 4 # tos add, next   host/target: 4+     aka cell+
+{ :noname 4 - ; }      anon 4 # tos sub, next   host/target: 4-     aka cell-
+{ :noname 8 + ; }      anon 8 # tos add, next   host/target: 8+
+{ :noname 8 - ; }      anon 8 # tos sub, next   host/target: 8-
 
-{ ' umin }
-anon d1 pop, d1 tos comp, ugt if d1 tos move, endif next    host/target: umin
-{ ' umax }
-anon d1 pop, d1 tos comp, ult if d1 tos move, endif next    host/target: umax
-{ '  min }
-anon d1 pop, d1 tos comp,  gt if d1 tos move, endif next    host/target: min
-{ '  max }
-anon d1 pop, d1 tos comp,  lt if d1 tos move, endif next    host/target: max
-{ '  abs }
-anon tos test, neg if tos neg, endif next                   host/target: abs
+{ ' umin }  anon d1 pop, d1 tos comp,
+                ugt if d1 tos move, endif next  host/target: umin
+{ ' umax }  anon d1 pop, d1 tos comp,
+                ult if d1 tos move, endif next  host/target: umax
+{ '  min }  anon d1 pop, d1 tos comp, 
+                 gt if d1 tos move, endif next  host/target: min
+{ '  max }  anon d1 pop, d1 tos comp, 
+                 lt if d1 tos move, endif next  host/target: max
+{ '  abs }  anon tos test,
+                neg if tos neg, endif next      host/target: abs
 
 { ' lshift }    anon d1 pop, tos d1 lsl, d1 tos move, next  host/target: lshift
 { ' rshift }    anon d1 pop, tos d1 lsr, d1 tos move, next  host/target: rshift
@@ -293,10 +293,11 @@ anon tos test, neg if tos neg, endif next                   host/target: abs
 { ' over }      anon d1 peek, tos push, d1 tos move, next   host/target: over
 { ' nip  }      anon cell # sp add, next                    host/target: nip
 { ' tuck }      anon d1 pop, tos push, d1 push, next        host/target: tuck
-{ '  rot }      anon d1 pop, d2 pop, d1 push, tos push, d2 tos move, next
-host/target:  rot
-{ ' -rot }      anon d1 pop, d2 pop, tos push, d2 push, d1 tos move, next
-host/target: -rot
+
+{ '  rot }      anon d1 pop, d2 pop, d1 push,
+                    tos push, d2 tos move, next             host/target:  rot
+{ ' -rot }      anon d1 pop, d2 pop, tos push, 
+                     d2 push, d1 tos move, next             host/target: -rot
 
 { :noname ; }   anon next   host/target: noop       aka chars
 
@@ -315,9 +316,18 @@ code  2@  tos a1 move, [a1]+ tos move, [a1] push, next
 code  2!  tos a1 move, [a1]+ pop, [a1]+ pop, tos pop, next
 
 ( ---------------------------------------------------------------------------- )
-code d+   d1 pop, d2 pop, [sp]+ d1 add, d2 tos addx, d1 push, next
-code d-   d1 pop, d2 pop, d1 neg, tos neg,
-         [sp]+ d1 add, d2 tos addx, d1 push, next
+code d+     d1 pop, d2 pop, [sp]+ d1 add, d2 tos addx, d1 push, next
+code d-     d1 pop, d2 pop, d1 neg, tos neg,
+            [sp]+ d1 add, d2 tos addx, d1 push, next
+
+code d2*    [sp] lsl, 1 # tos roxl, next
+code d2/    1 # tos asr, [sp] roxr, next
+
+code dlshift    next
+code drshift    next
+code dnegate    next
+code dinvert    next
+code dabs       next
 
 code arshift    d1 pop, tos d1   asr, d1 tos move, next
 code lrotate    d1 pop, tos d1   rol, d1 tos move, next
@@ -342,7 +352,7 @@ code 2swap  d1 pop, d2 pop, d3 pop, d1 push,
 
 ( ---------------------------------------------------------------------------- )
 code   mux  tos d1 move, [sp]+ tos and, d1 not, [sp]+ d1 and, d1 tos or, next
-code demux  tos d1 move, [sp] tos and, d1 not, d1 [sp] and, next
+code demux  tos d1 move, [sp]  tos and, d1 not, d1 [sp]  and, next
 
 ( ---------------------------------------------------------------------------- )
 code ms ( n -- )
