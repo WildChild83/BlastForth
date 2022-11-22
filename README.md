@@ -2,15 +2,15 @@
 
 A Forth-based game development environment for the Sega Genesis/Megadrive platform.  Currently at version 0.  This is still very much a work-in-progress.  Updates will be made to this Readme file when I have time and when I think of something to write down.  Ask me questions!
 
-Forth is a very powerful programming language/paradigm that you've probably never heard of.  The best way to learn it is to read the book *Starting Forth* by Leo Brodie.  First published in 1981, it remains today the standard tutorial for the Forth programming language.  There is a PDF copy of this book in the BlastForth folder, or you can read it online here:
+Forth is a very powerful programming language/paradigm that you've probably never heard of.  The best way to learn it is to read the book *Starting Forth* by Leo Brodie.  First published in 1981, it remains today the best tutorial for the Forth programming language.  There is a PDF copy in the BlastForth folder, or you can read it online here:
 https://www.forth.com/starting-forth/
 
-You will need the Gforth compiler in order to build Genesis/Megadrive software with BlastForth.  Gforth is available for all major desktop platforms (Linux, Mac, Windows) and can be downloaded from here:
+You will need the Gforth compiler to build Genesis/Megadrive software with BlastForth.  Gforth is available for all major desktop platforms (Linux, Mac, Windows) and can be downloaded from here:
 https://gforth.org/
 
 Linux users can also get Gforth from their distro's repositories, as it is a standard component of the GNU operating system.
 
-See the file *Word-Reference.md* in this folder for a list of all the words provided by BlasForth.
+See the file *Word-Reference.md* in this folder for a list of all the words provided by BlastForth.
 
 # Style Notes
 
