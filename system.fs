@@ -6,39 +6,60 @@
 include system/glossary.fs
 
 ( ---------------------------------------------------------------------------- )
-{  1  megabytes constant SizeOfROM }    \ default is 1 MB, max supported 4 MB
+{  1  megabytes constant SizeOfROM }    \ default = 1 MB,  max supported = 4 MB
 include system/romfile.fs
 
 ( ---------------------------------------------------------------------------- )
 (       Sega ROM Header                                                        )
 ( ---------------------------------------------------------------------------- )
-( Console )     { s" SEGA GENESIS    " } string,
-( Copyright )   { s" (C)NAME 20xx    " } string,
-( Domestic )    { s" Japanese Name                                   " } string,
-( Foreign )     { s" Western Name                                    " } string,
-( Version # )   { s" GM 00000001-01" } string,
-( Checksum )         0 h,
-( I/O Support ) { s" J               " } string,
-( ROM Start )        0 ,
-( ROM End )     { SizeOfROM 1- } ,
-( RAM Start )  $FF0000 ,
-( RAM End )    $FFFFFF ,
-( SRAM? )            0 ,
-( -- )               0 ,
-( SRAM Start )       0 ,
-( SRAM End )         0 ,
-( -- )           0 , 0 ,
-( Notes )     { s"                                         " } string,
-( Countries ) { s" JUE             " } string,
+Forth definitions
+
+( Console )      rom" SEGA GENESIS    "
+( Copyright )    rom" (C)NAME 20xx    "
+( Domestic )     rom" Japanese Name                                   "
+( Foreign )      rom" Western Name                                    "
+( Version # )    rom" GM 00000001-01"
+( Checksum )          0 h,
+( I/O Support )  rom" J               "
+( ROM Start )         0 ,
+( ROM End )     SizeOfROM { 1- } ,
+( RAM Start )   $FF0000 ,
+( RAM End )     $FFFFFF ,
+( SRAM? )             0 ,
+( -- )                0 ,
+( SRAM Start )        0 ,
+( SRAM End )          0 ,
+( -- )            0 , 0 ,
+( Notes )        rom"                                         "
+( Countries )    rom" JUE             "
 
 ( ---------------------------------------------------------------------------- )
-\ warn if header is the wrong size (comment this line to disable the warning)
-{ romsize 512 <> [if] .( Incorrect Sega ROM Header. ) [then] } 
+\ warn if header is the wrong size [comment this line to disable the warning]
+romspace { 512 bytes <> } [if] .( Incorrect Sega ROM Header. ) [then]
 
 ( ---------------------------------------------------------------------------- )
-include system/68k.fs       \ Motorola 68000 assembler, Forth style
-include system/cross.fs     \ cross-compiler, standard defining words
+(       Code Base                                                              )
+( ---------------------------------------------------------------------------- )
+include system/68k.fs       \ Motorola 68000 assembler
+include system/forth.fs     \ Forth cross-compiler, standard defining words
 include system/core.fs      \ all the most important Forth words
+
+( ---------------------------------------------------------------------------- )
+(       The "Next" Mechanism  [i.e. the heart of the whole system]             )
+( ---------------------------------------------------------------------------- )
+Forth definitions
+
+\ fetch the next word from the instruction thread and jump to it
+asm data next&
+    a4 read,            \ A4 = code field address [from instruction thread]
+    [a4]+ a3 move,      \ A3 = code field,  A4 = data field address
+    [a3] jump,          \ jump to code field
+    end
+
+( ---------------------------------------------------------------------------- )
+(       More System Files                                                      )
+( ---------------------------------------------------------------------------- )
+include system/interrupts.fs    \ vertical and horizontal blank handlers
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

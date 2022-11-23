@@ -21,14 +21,14 @@ only Forth definitions   decimal
 variable scribe
 : -transcription    scribe off ;
 : (refill) ( -- ) refill 0= abort" Unexpected end of input." ;
-: (execute?) ( xt -- xt|0  )
+: execute? ( xt -- xt|0  )
     dup ['] \ =   over ['] ( = or   over ['] -transcription = or   and ;
-: (transcribe) ( addr u -- flag )
+: transcribe-name ( addr u -- flag )
     find-name dup 0= abort" Word not found."
-    dup name>int dup (execute?) ?dup if execute 2drop exit endif
+    dup name>int dup execute? ?dup if execute 2drop exit endif
     swap name>string nextname alias ;
-: (parse) ( "name" -- )
-    parse-name ?dup if (transcribe) exit endif drop (refill) ;
+: transcribe ( "name" -- )
+    parse-name ?dup if transcribe-name exit endif drop (refill) ;
 
 ( ---------------------------------------------------------------------------- )
 (       Word list and search order for cross-compilation                       )
@@ -40,7 +40,7 @@ variable searchorder     variable compilation
 : !order     ( gloss -- )     searchorder !   widlist set-order ;
 : no-int     ( -- )           state @ 0= -14 and throw ;
 
-wordlist create blast-gloss , bl parse Forth string, align blast-gloss 1 list,
+wordlist create blast-gloss , bl parse Forth string, align  blast-gloss 1 list,
 blast-gloss searchorder ! get-order blast-gloss @ swap 1+ set-order definitions
 
 :  Forth         blast-gloss !order ;
@@ -48,7 +48,7 @@ blast-gloss searchorder ! get-order blast-gloss @ swap 1+ set-order definitions
 :  definitions   searchorder @ compilation !  definitions ;
 :  wid           searchorder @ @ ;
 : >order         >r get-order r> swap 1+ set-order ;
-:  transcription scribe on begin (parse) scribe @ 0= until ;
+:  transcription scribe on   begin transcribe   scribe @ 0= until ;
 : -transcription scribe off ;
 :  order         searchlist 0 ?do cell+ count type space loop compilation @
                  cell+ count [char] > emit type [char] < emit space ;
@@ -58,18 +58,31 @@ blast-gloss searchorder ! get-order blast-gloss @ swap 1+ set-order definitions
     parse-name string, align   list,   r> !order
     does> ( -- ) !order ;
 
-forth-wordlist Glossary Host definitions >order   include transcribe.fs
-: } previous ; immediate
-: name>interpret name>int ;
+( ---------------------------------------------------------------------------- )
+forth-wordlist
+    Glossary Host definitions
+>order
 
-wid constant host-wordlist   forth-wordlist previous Forth definitions >order
-: \ postpone \ ; immediate
-: ( postpone ( ; immediate
-: synonym   parse-name  nextname  ' alias ;
-: aka       lastxt alias ;
+    include transcribe.fs
 
-Host : { host-wordlist >order ; immediate
-Forth
+: } ( -- ) previous ; immediate
+: host,  ( n -- )  , ;
+: hostc, ( c -- ) c, ;
+: name>interpret ( nt -- xt ) name>int ;
+
+( ---------------------------------------------------------------------------- )
+forth-wordlist
+    Host wid  constant host-wordlist
+    Forth definitions
+>order
+
+: \   postpone \ ; immediate
+: (   postpone ( ; immediate
+: synonym ( "newname" "oldname" ) parse-name  nextname  ' alias ;
+: aka     ( "newname" )           lastxt alias ;
+
+( ---------------------------------------------------------------------------- )
+Host    : { ( -- ) host-wordlist >order ;   immediate
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
@@ -105,9 +118,9 @@ synonym flag 0<>     synonym not 0=
 : demux  ( n u -- n1 n2 ) 2dup invert and -rot and ;
 : bounds ( addr u -- limit index ) over + swap ;
 : ndrop  ( n*x  n -- ) 0 ?do drop loop ;
-: ucase    ( c -- c' )   dup [ char a char z 1+ ] 2literal within 32 and - ;
-: c=   ( c1 c2 -- flag ) ucase swap ucase =  ;
-: c<>  ( c1 c2 -- flag ) ucase swap ucase <> ;
+: uppercase  ( c -- c' ) dup [ char a char z 1+ ] 2literal within 32 and - ;
+: c=   ( c1 c2 -- flag ) uppercase swap uppercase =  ;
+: c<>  ( c1 c2 -- flag ) uppercase swap uppercase <> ;
 : str= ( addr1 u1 addr2 u2 -- flag )
     rot over <> if 3 ndrop false exit endif
     bounds ?do count i c@ c<> if drop unloop false exit endif loop drop true ;
@@ -131,7 +144,15 @@ synonym flag 0<>     synonym not 0=
 : hex.s  ( -- ) base @ >r  hex .s   r> base ! ;
 
 ( ---------------------------------------------------------------------------- )
-Forth definitions           { synonym include include }
+Forth definitions {
+
+synonym include include
+synonym [if]    [if]    immediate
+synonym [else]  [else]  immediate
+synonym [then]  [then]  immediate
+synonym [endif] [then]  immediate
+
+: .( ( "text" -- ) [char] ) parse type ; immediate
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

@@ -16,7 +16,7 @@
                 0=  0<>  =  <>  >  >=  <  <=  u>  u>=  u<  u<=
     >r  r@  r>  2>r  2r@  2r>  @  !  +!  c@  c!  2@  2!  l!  w!  l@  w@
             +  -  1+  1-  *  m*  /  mod  /mod  */  */mod  2*  2/
-    <#  #  #s  #>  :  '  .  d.  u.  ud.  .r  d.r  u.r  ud.r  .s  ]  ,  c,
+        <#  #  #s  #>  :  '  .  d.  u.  ud.  .r  d.r  u.r  ud.r  .s  ]
             abort  abs  allocate  and  base  bin  bl  >body  bye
             cell+  cells  char  close-file  cmove  cmove>  compare
             constant  2constant  count  cr  create  create-file
@@ -39,7 +39,8 @@
 : ;       no-int postpone ;       ; immediate
 : if      no-int postpone if      ; immediate
 : else    no-int postpone else    ; immediate
-: then    no-int postpone then    ; immediate : endif postpone then ; immediate
+: then    no-int postpone then    ; immediate
+: endif   no-int postpone then    ; immediate
 : exit    no-int postpone exit    ; immediate
 : begin   no-int postpone begin   ; immediate
 : again   no-int postpone again   ; immediate
@@ -66,7 +67,6 @@
 : 2literal  no-int postpone 2literal ; immediate
 
 : s" state @ if postpone s" exit endif [char] " parse ; immediate
-: .( [char] ) parse type ; immediate
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

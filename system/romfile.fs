@@ -10,17 +10,17 @@
 (           - glossary.fs                                                      )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
-Forth definitions {
+Host definitions
 
-( ---------------------------------------------------------------------------- )
-(       Binary File Output                                                     )
-( ---------------------------------------------------------------------------- )
 variable rom        SizeOfROM allocate throw  rom !
 variable rom*       rom @ rom* !
 
 : >1< ( n -- c ) $FF and ;
 : >2< ( n -- u ) dup  8 rshift >1< swap >1<  8 lshift or ;
 : >4< ( n -- u ) dup 16 rshift >2< swap >2< 16 lshift or ;
+
+( ---------------------------------------------------------------------------- )
+Forth definitions {
 
 :  , ( n -- ) >4<  rom* @ tuck l!  4 + rom* ! ;    aka l,
 : h, ( n -- ) >2<  rom* @ tuck w!  2 + rom* ! ;    aka w,
@@ -30,6 +30,8 @@ variable rom*       rom @ rom* !
 
 :  string, ( addr u -- ) rom* @   2dup + rom* !   swap cmove ;
 : cstring, ( addr u -- ) dup c, string, ;
+:  rom"    ( "text" -- ) [char] " parse  string, ;
+:  romc"   ( "text" -- ) [char] " parse cstring, ;
 
 : romaddr ( addr -- romaddr ) rom @ + ;
 : roml@ ( romaddr -- u ) romaddr l@ >4< ;           aka rom@
@@ -39,13 +41,16 @@ variable rom*       rom @ rom* !
 : romw! ( u romaddr -- ) >r >2< r> romaddr w! ;     aka romh!
 : romb! ( u romaddr -- ) >r >1< r> romaddr c! ;     aka romc!
 
-:  romsize ( -- u ) rom* @ rom @ - ;
+: romspace ( -- u ) rom* @ rom @ - ;
 : alignrom   ( -- ) rom* @ 1 and rom* +! ;
-: romstats   ( -- ) romsize .bytes ;
-:  freerom   ( -- ) romstats  rom  @ free throw   rom off  rom* off
-                    cr depth if .s cr endif ;
-: printrom   ( -- ) rom* @ rom @ 512 + ?do i c@ hex. loop cr freerom ;
+: romstats   ( -- ) romspace .bytes ;
 
+Host definitions
+: freerom ( -- )
+    romstats   rom @ free throw   rom off rom* off   cr depth if .s cr endif ;
+
+Forth definitions {
+: printrom ( -- ) rom* @ rom @ 512 + ?do i c@ hex. loop cr freerom ;
 : romfile  ( addr u -- )
     2dup type ." , "   w/o bin create-file throw >r
     rom @ rom* @ over - r@ write-file throw   r> close-file throw   freerom ;
@@ -55,7 +60,7 @@ variable rom*       rom @ rom* !
 ( ---------------------------------------------------------------------------- )
 (       68k Vector Table                                                       )
 ( ---------------------------------------------------------------------------- )
-: !68k-vector ( n -- ) romsize swap  2 lshift rom! ;
+: !68k-vector ( n -- ) romspace swap  2 lshift rom! ;
 
 : 68k-vbi:       ( -- ) 30 !68k-vector ;
 : 68k-hbi:       ( -- ) 28 !68k-vector ;
@@ -73,7 +78,7 @@ variable rom*       rom @ rom* !
 : 68k-trap: ( trap# -- ) 32 + !68k-vector ;
 : 68k-start:      ( -- )  1   !68k-vector ;
 : 68k-stack!    ( u -- )  0 rom! ;
-}
+
 256 zeroes,                     
 
 ( ---------------------------------------------------------------------------- )

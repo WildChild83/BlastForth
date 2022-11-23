@@ -10,7 +10,7 @@
 (           - glossary.fs                                                      )
 (           - romfile.fs                                                       )
 (           - 68k.fs                                                           )
-(           - cross.fs                                                         )
+(           - forth.fs                                                         )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
 Forth definitions
@@ -112,6 +112,21 @@ code 2tuck      [sp]+ [[ d1 d2 d3 ]] movem, d1 push, tos push,
                 [[ d1 d2 d3 ]] -[sp] movem, next
 code 2swap      d1 pop, d2 pop, d3 pop, d1 push,
                 tos push, d3 push, d2 tos move, next
+code third      tos push, [sp 2 cells +] tos move, next
+code fourth     tos push, [sp 3 cells +] tos move, next
+
+code  >r        tos rpush, tos  pop,  next
+code  r>        tos  push, tos rpop,  next
+code 2>r        [sp]+ rpush, tos rpush, tos pop, next
+code 2r@        tos push, tos rpeek, [rp cell +] push, next
+code 2r>        tos push, tos pop, -[sp] rpop, next
+code  i         tos push, tos rpeek, next                   aka r@
+code  i'        tos push, [rp   cell  +] tos move, next     aka rsecond
+code  j         tos push, [rp 2 cells +] tos move, next     aka rthird
+code  k         tos push, [rp 4 cells +] tos move, next
+code  rdrop       cell  # rp add, next
+code 2rdrop     2 cells # rp add, next                      aka unloop
+code  ndrop     2 # tos lsl, tos sp add, tos pop, next
 
 code dinvert    [sp] not, tos not,  next
 code dnegate    [sp] neg, tos negx, next
@@ -144,6 +159,37 @@ code drshift
 code 16rotate   tos swap, next          synonym 32drotate swap
 
 ( ---------------------------------------------------------------------------- )
+(       Flow Control Words                                                     )
+( ---------------------------------------------------------------------------- )
+{ : (disp?) ( n -- )   ?shalf not abort" Destination out of range." ; }
+{ : (disp)  ( u -- n ) romspace      - 2 - (disp?) ; }
+{ : (disp>) ( u -- n ) romspace swap - 2 - (disp?) ; }
+
+code  branch    [tp]+ tp h add, next
+code 0branch    d1 h read, tos test, z= if d1 tp h add, endif tos pop, next
+
+{ : if    ( -- orig ) comp-only 0branch  romspace 0 h, ; }
+{ : ahead ( -- orig ) comp-only  branch  romspace 0 h, ; }
+{ : then  ( orig -- ) comp-only dup (disp>) swap romh! ; }      aka endif
+
+{ : begin ( -- dest ) comp-only romspace ; }
+{ : again ( dest -- ) comp-only  branch (disp) h, ; }
+{ : until ( dest -- ) comp-only 0branch (disp) h, ; }
+
+{ : else  ( orig1 -- orig2 )     comp-only } ahead { swap } then { ; }
+{ : while  ( dest -- orig dest ) comp-only } if { swap ; }
+{ : repeat ( orig dest -- )      comp-only } again then { ; }
+
+( ---------------------------------------------------------------------------- )
+(       Other Words                                                            )
+( ---------------------------------------------------------------------------- )
+code sp@    tos push, sp tos move, next
+code sp!    tos sp move, tos pop,  next
+code rp@    tos push, rp tos move, next
+code rp!    tos rp move, tos pop,  next
+code np@    tos push, np tos move, next
+code np!    tos np move, tos pop,  next
+
 code   mux  tos d1 move, [sp]+ tos and, d1 not, [sp]+ d1 and, d1 tos or, next
 code demux  tos d1 move, [sp]  tos and, d1 not, d1 [sp]  and, next
 
