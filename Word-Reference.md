@@ -89,7 +89,7 @@ Add the top two stack items together, leaving their sum on the stack.
 `-` *( n1 n2 -- n' )*  "minus"  
 Subtract the top item from the second-to-top item (*n'*=*n1*-*n2*).
 
-`negate` *( n -- n' )*
+`negate` *( n -- n' )*  
 Perform arithmetic (two's complement) negation on the top stack item.
 
 `1+` *( n -- n' )*  "one plus"  
