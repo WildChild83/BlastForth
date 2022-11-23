@@ -92,23 +92,32 @@ Add the top two stack items together, leaving their sum on the stack.
 `-` *( n1 n2 -- n' )*  "minus"  
 Subtract the top item from the second-to-top item (*n'*=*n1*-*n2*).
 
-`negate` *( n -- n' )*  
-Perform arithmetic (two's complement) negation on the top stack item.
+`negate` *( n -- n' )*  "negate"  
+Perform arithmetic (two's complement) inversion on the top stack item.
+
+`d+` *( d1lo d1hi d2lo d2hi -- dlo' dhi' )*  "D plus"  
+*Double-cell* addition: add two double-cell (64-bit) numbers and return the double-cell result.
+
+`d-` *( d1lo d1hi d2lo d2hi -- dlo' dhi' )*  "D minus"  
+*Double-cell* subtraction: subtract *d2* from *d1* and return the double-cell result.
+
+`dnegate` *( dlo dhi -- dlo' dhi' )*  "D negate"  
+*Double-cell* negation: *d'* is the arithmetic inverse of *d*.
 
 `m+` *( dlo dhi n -- dlo' dhi' )*  "M plus"  
-Add a *signed* number to a double-cell (64-bit) number.
+*Mixed* addition: add a *signed* number to a double-cell (64-bit) number.
 
 `um+` *( dlo dhi u -- dlo' dhi' )*  "U M plus"  
-Add an *unsigned* number to a double-cell number.
+*Unsigned mixed* addition: add an unsigned number to a double-cell number.
 
 `*` *( n1 n2 -- n' )*  "star"  
 Multiply two single-cell (32-bit) numbers, producing a single-cell result.
 
 `m*` *( n1 n2 -- dlo dhi )*  "M star"  
-Multiply two *signed* single-cell numbers, producing a *signed* double-cell result.
+*Mixed* multiplication: multiply two signed single-cell numbers, producing a signed double-cell result.
 
 `um*` *( u1 u2 -- udlo udhi )*  "U M star"  
-Multiply two *unsigned* single-cell numbers, producing an *unsigned* double-cell result.
+*Unsigned mixed* muliplication: multiply two unsigned single-cell numbers, producing an unsigned double-cell result.
 
 `h*` *( h1 h2 -- n )*  "H star"  
 Multiply two signed half-cell (16-bit) numbers, producing a signed single-cell result.
@@ -117,16 +126,22 @@ Multiply two signed half-cell (16-bit) numbers, producing a signed single-cell r
 Multiply two unsigned half-cell numbers, producing an unsigned single-cell result.
 
 `/` *( n h -- h' )*  "slash"  
-Divide a signed single-cell number *by a half-cell number,* producing a signed *half-cell* result.
+Divide a signed single-cell number *by a half-cell number,* producing a signed *half-cell* quotient.
 
 `u/` *( u uh -- uh' )*  "U slash"  
-Divide an unsigned single-cell number *by a half-cell number,* producing an unsigned *half-cell* result.
+Divide an unsigned single-cell number *by a half-cell number,* producing an unsigned *half-cell* quotient.
 
 `mod` *( n h -- uh )*  "mod"  
 Perform *signed* division and return the *modulus* (remainder).
 
 `umod` *( u uh -- uh' )*  "U mod"  
 Perform *unsigned* division and return the *modulus* (remainder).
+
+`/mod` *( n h -- mod quot )*  "slash mod"  
+Perform *signed* division and return the modulus and quotient.
+
+`u/mod` *( u uh -- umod uquot )*  "U slash mod"  
+Perform *unsigned* division and return the modulus and quotient.
 
 `1+` *( n -- n' )*  "one plus"  
 `2+` *( n -- n' )*  "two plus"  
