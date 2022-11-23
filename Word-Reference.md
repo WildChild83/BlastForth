@@ -192,6 +192,9 @@ Logically shift N to the left by U bit positions.
 `rshift` *( n u -- n' )*  "R shift"  
 Logically shift N to the right by U bit positions.
 
+`arshift` *( n u -- n' )*  "A R shift"  
+*Arithmetically* shift N to the right, preserving the sign of N.
+
 `dlshift` *( dlo dhi  u -- d'lo d'hi )*  "D L shift"  
 Left shift the double-cell number D by U bit positions.
 
