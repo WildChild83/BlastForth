@@ -95,23 +95,23 @@ Subtract the top item from the second-to-top item (*n'*=*n1*-*n2*).
 `negate` *( n -- n' )*  "negate"  
 Perform arithmetic (two's complement) inversion on the top stack item.
 
-`d+` *( d1lo d1hi d2lo d2hi -- dlo' dhi' )*  "D plus"  
+`d+` *( d1lo d1hi  d2lo  d2hi -- d'lo d'hi )*  "D plus"  
 *Double-cell* addition: add two double-cell (64-bit) numbers and return the double-cell result.
 
-`d-` *( d1lo d1hi d2lo d2hi -- dlo' dhi' )*  "D minus"  
+`d-` *( d1lo d1hi  d2lo  d2hi -- d'lo d'hi )*  "D minus"  
 *Double-cell* subtraction: subtract *d2* from *d1* and return the double-cell result.
 
-`dnegate` *( dlo dhi -- dlo' dhi' )*  "D negate"  
+`dnegate` *( dlo dhi -- d'lo d'hi )*  "D negate"  
 *Double-cell* negation: *d'* is the arithmetic inverse of *d*.
 
-`m+` *( dlo dhi n -- dlo' dhi' )*  "M plus"  
+`m+` *( dlo dhi  n -- d'lo d'hi )*  "M plus"  
 *Mixed* addition: add a *signed* number to a double-cell (64-bit) number.
 
-`um+` *( dlo dhi u -- dlo' dhi' )*  "U M plus"  
+`um+` *( dlo dhi  u -- d'lo 'dhi )*  "U M plus"  
 *Unsigned mixed* addition: add an unsigned number to a double-cell number.
 
 `*` *( n1 n2 -- n' )*  "star"  
-Multiply two single-cell (32-bit) numbers, producing a single-cell result.
+Multiply two single-cell (32-bit) numbers, producing a single-cell result.  Works on both signed and unsigned numbers.
 
 `m*` *( n1 n2 -- dlo dhi )*  "M star"  
 *Mixed* multiplication: multiply two signed single-cell numbers, producing a signed double-cell result.
@@ -143,6 +143,12 @@ Perform *signed* division and return the modulus and quotient.
 `u/mod` *( u uh -- umod uquot )*  "U slash mod"  
 Perform *unsigned* division and return the modulus and quotient.
 
+`s>d` *( n -- dlo dhi )*  "S to D"  
+Convert a signed *single*-cell number to a *double*-cell number.
+
+`d>s` *( dlo dhi -- n )*  "D to S"  
+Convert a *double*-cell number to a *single*-cell number.  Equivalent to `drop`.
+
 `1+` *( n -- n' )*  "one plus"  
 `2+` *( n -- n' )*  "two plus"  
 `4+` *( n -- n' )*  "four plus"  
@@ -160,6 +166,61 @@ Increment or decrement by a small power of 2.  These are faster than `+` and `-`
 `4/` *( n -- n' )*  "four slash"  
 `8/` *( n -- n' )*  "eight slash"  
 Multiply or divide by a small power of 2.  These are faster than `lshift` and `rshift`.
+
+`d1+` *( dlo dhi -- d'lo d'hi )*  "D one plus"  
+`d1-` *( dlo dhi -- d'lo d'hi )*  "D one minus"  
+`d2*` *( dlo dhi -- d'lo d'hi )*  "D two star"  
+`d2/` *( dlo dhi -- d'lo d'hi )*  "D two slash"  
+
+## Bitwise Operators
+
+`and` *( n1 n2 -- n' )*  "and"  
+Logically "and" the arguments together and return the result.
+
+`or` *( n1 n2 -- n' )*  "or"  
+Perform an *inclusive* "or" operation.
+
+`xor` *( n1 n2 -- n' )*  "xor"  
+Perform an *exclusive* "or" operation.
+
+`invert` *( n -- n' )*  "invert"  
+Perform logical (one's complement) inversion.
+
+`lshift` *( n u -- n' )*  "L shift"  
+Logically shift N to the left by U bit positions.
+
+`rshift` *( n u -- n' )*  "R shift"  
+Logically shift N to the right by U bit positions.
+
+`dlshift` *( dlo dhi  u -- d'lo d'hi )*  "D L shift"  
+Left shift the double-cell number D by U bit positions.
+
+`drshift` *( dlo dhi  u -- d'lo d'hi )*  "D R shift"  
+Right shift the double-cell number D by U bit positions.
+
+`lrotate` *( n u -- n' )*  "L rotate"  
+Perform a 32-bit leftward rotation of N by U bit positions.
+
+`rrotate` *( n u -- n' )*  "R rotate"  
+Perform a 32-bit rightward rotation of N by U bit positions.
+
+`hlrotate` *( h u -- h' )*  "H L rotate"  
+16-bit (*half*-cell) leftward rotation.
+
+`hrrotate` *( h u -- h' )*  "H R rotate"  
+16-bit (*half*-cell) rightward rotation.
+
+`clrotate` *( c u -- c' )*  "C L rotate"  
+8-bit (*char*) leftward rotation.
+
+`crrotate` *( c u -- c' )*  "C R rotate"  
+8-bit (*char*) rightward rotation.
+
+`mux` *( n1 n2 mask -- n' )*  "mux"  
+*Multiplex* two numbers.  Logically "and" N2 with the mask, and N1 with the mask's inverse, and "or" the results together.
+
+`demux` *( n mask -- n1 n2 )*  "demux"  
+*De-multiplex* a number.  N2 is the logical "and" of N with the mask, and N1 is the "and" of N with the mask's inverse.
 
 
 
