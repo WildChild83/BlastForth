@@ -4,7 +4,7 @@ Forth environments use a *dual stack* machine architecture.  The *Data Stack* ho
 
 Since the Data Stack is the primary structure the programmer works with, it is usually just called "the stack." 
 
-### Data Stack Manipulators
+## Data Stack Manipulators
 
 `swap` *( a b -- b a )*  
 Exchange the top two stack items.
@@ -19,10 +19,10 @@ Exchange the top two stack items.
 Copy the second-to-top item, making the copy the new top-of-stack item.
 
 `nip` *( a b -- b )*  
-Discard the second-to-top stack item.
+Discard the second-to-top stack item.  Equivalent to `swap drop`.
 
 `tuck` *( a b -- b a b )*  
-Copy the topmost item, making the copy the *third* stack item.
+Copy the topmost item, making the copy the *third* stack item.  Equivalent to `swap over`.
 
 `rot` *( a b c -- b c a )*  "rote"  
 *Rotate* the third-to-top item to the top of the stack.
@@ -56,7 +56,7 @@ Copy the *nth* item to the top of the stack.  `1 pick` is equivalent to `over` a
 `roll` *( xn..x0  n -- xn-1..x0  xn )*  
 Rotate the *nth* item to the top of the stack.  `2 roll` is equivalent to `rot`, `1 roll` to `swap`, and `0 roll` is a null operation.
 
-### Return Stack Manipulators
+## Return Stack Manipulators
 
 `>r` *( n -- ) ( R: -- n )*  "to R"  
 Move the topmost item on the Data Stack to the top of the Return Stack.
@@ -79,7 +79,7 @@ Discard the topmost Return Stack item.
 `2rdrop` *( R: a1 a2 -- )*  "two R drop"  
 Move double-cell numbers to and from the Return Stack.
 
-# Arithmetic Operators
+## Arithmetic Operators
 
 `+` *( n1 n2 -- n' )*  "plus"  
 Add the top two stack items together, leaving their sum on the stack.
