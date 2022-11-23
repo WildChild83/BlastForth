@@ -47,10 +47,10 @@ Analogous to their single-cell counterparts, these words operate on double-cell 
 Duplicate the topmost stack item if and only if it is non-zero.
 
 `third` *( a b c -- a b c a )*  
-Copy the third-to-top item to the top of the stack.
+Copy the thirdmost item to the top of the stack.
 
 `fourth` *( a b c d -- a b c d a )*  
-Copy the fourth-to-top item to the top of the stack.
+Copy the fourthmost item to the top of the stack.
 
 `pick` *( xn..x0  n -- xn..x0  xn )*  
 Copy the *nth* item to the top of the stack.  `1 pick` is equivalent to `over` and `0 pick` is equivalent to `dup`.
@@ -69,9 +69,6 @@ Move the topmost item on the Return Stack back to the Data Stack.
 `r@` *( -- n ) ( R: n -- n )*  "R fetch"  
 *Copy* the topmost Return Stack item, leaving the Return Stack unmodified.
 
-`rsecond` *( -- n1 ) ( R: n1 n2 -- n1 n2 )*  "R second"  
-Copy the second-to-top Return Stack item to the Data Stack.
-
 `rdrop` *( R: n -- )*  "R drop"  
 Discard the topmost Return Stack item.
 
@@ -80,6 +77,12 @@ Discard the topmost Return Stack item.
 `2r@` *( -- a1 a2 ) ( R: a1 a2 -- a1 a2 )*  "two R fetch"  
 `2rdrop` *( R: a1 a2 -- )*  "two R drop"  
 Move double-cell numbers to and from the Return Stack.
+
+`rsecond` *( -- n1 ) ( R: n1 n2 -- n1 n2 )*  "R second"  
+Copy the second-to-top Return Stack item to the Data Stack.
+
+`rthird` *( -- n1 ) ( R: n1 n2 n3 -- n1 n2 n3)*  "R third"  
+Copy the thirdmost Return Stack item to the Data Stack.
 
 ## Arithmetic Operators
 
@@ -92,6 +95,39 @@ Subtract the top item from the second-to-top item (*n'*=*n1*-*n2*).
 `negate` *( n -- n' )*  
 Perform arithmetic (two's complement) negation on the top stack item.
 
+`m+` *( dlo dhi n -- dlo' dhi' )*  "M plus"  
+Add a *signed* number to a double-cell (64-bit) number.
+
+`um+` *( dlo dhi u -- dlo' dhi' )*  "U M plus"  
+Add an *unsigned* number to a double-cell number.
+
+`*` *( n1 n2 -- n' )*  "star"  
+Multiply two single-cell (32-bit) numbers, producing a single-cell result.
+
+`m*` *( n1 n2 -- dlo dhi )*  "M star"  
+Multiply two *signed* single-cell numbers, producing a *signed* double-cell result.
+
+`um*` *( u1 u2 -- udlo udhi )*  "U M star"  
+Multiply two *unsigned* single-cell numbers, producing an *unsigned* double-cell result.
+
+`h*` *( h1 h2 -- n )*  "H star"  
+Multiply two signed half-cell (16-bit) numbers, producing a signed single-cell result.
+
+`uh*` *( uh1 uh2 -- u )*  "U H star"  
+Multiply two unsigned half-cell numbers, producing an unsigned single-cell result.
+
+`/` *( n h -- h' )*  "slash"  
+Divide a signed single-cell number *by a half-cell number,* producing a signed *half-cell* result.
+
+`u/` *( u uh -- uh' )*  "U slash"  
+Divide an unsigned single-cell number *by a half-cell number,* producing an unsigned *half-cell* result.
+
+`mod` *( n h -- uh )*  "mod"  
+Perform *signed* division and return the *modulus* (remainder).
+
+`umod` *( u uh -- uh' )*  "U mod"  
+Perform *unsigned* division and return the *modulus* (remainder).
+
 `1+` *( n -- n' )*  "one plus"  
 `2+` *( n -- n' )*  "two plus"  
 `4+` *( n -- n' )*  "four plus"  
@@ -100,7 +136,7 @@ Perform arithmetic (two's complement) negation on the top stack item.
 `2-` *( n -- n' )*  "two minus"  
 `4-` *( n -- n' )*  "four minus"  
 `8-` *( n -- n' )*  "eight minus"  
-Increment or decrement by the specified amount.  These are faster than `+` and `-`.
+Increment or decrement by a small power of 2.  These are faster than `+` and `-`.
 
 `2*` *( n -- n' )*  "two star"  
 `4*` *( n -- n' )*  "four star"  
