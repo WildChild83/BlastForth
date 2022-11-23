@@ -23,7 +23,7 @@ Discard the second-to-top stack item.
 **rot ( a b c -- b c a )**          *"rote"*  
 *Rotate* the third-to-top item to the top of the stack.
 
-**-rot ( a b c -- c a b )**         *"minus rote"*  
+`-rot` *( a b c -- c a b )*         "minus rote"  
 *Reverse rotate* the topmost stack item to the third position.
 
 **2swap ( a1 a2 b1 b2 -- b1 b2 a1 a2 )**  
