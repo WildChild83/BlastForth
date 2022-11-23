@@ -4,6 +4,8 @@ Forth environments use a *dual stack* machine architecture.  The *Data Stack* ho
 
 Since the Data Stack is the primary structure the programmer works with, it is usually just called "the stack." 
 
+This reference uses a *stack effect notation* of the form *( operands -- results )*, where "operands" represents the items on the stack before the word is invoked, and "results" shows the state of the stack after the word returns.  The operands and results portions both have the top-of-stack item on the right and deeper items toward the left.
+
 ## Data Stack Manipulators
 
 `swap` *( a b -- b a )*  
@@ -86,6 +88,27 @@ Add the top two stack items together, leaving their sum on the stack.
 
 `-` *( n1 n2 -- n' )*  "minus"  
 Subtract the top item from the second-to-top item (*n'*=*n1*-*n2*).
+
+`negate` *( n -- n' )*
+Perform arithmetic (two's complement) negation on the top stack item.
+
+`1+` *( n -- n' )*  "one plus"  
+`2+` *( n -- n' )*  "two plus"  
+`4+` *( n -- n' )*  "four plus"  
+`8+` *( n -- n' )*  "eight plus"  
+`1-` *( n -- n' )*  "one minus"  
+`2-` *( n -- n' )*  "two minus"  
+`4-` *( n -- n' )*  "four minus"  
+`8-` *( n -- n' )*  "eight minus"  
+Increment or decrement by the specified amount.  These are faster than `+` and `-`.
+
+`2*` *( n -- n' )*  "two star"  
+`4*` *( n -- n' )*  "four star"  
+`8*` *( n -- n' )*  "eight star"  
+`2/` *( n -- n' )*  "two slash"  
+`4/` *( n -- n' )*  "four slash"  
+`8/` *( n -- n' )*  "eight slash"  
+Multiply or divide by a small multiple of 2.  These are faster than `lshift` and `rshift`.
 
 
 
