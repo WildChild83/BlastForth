@@ -108,7 +108,7 @@ Increment or decrement by the specified amount.  These are faster than `+` and `
 `2/` *( n -- n' )*  "two slash"  
 `4/` *( n -- n' )*  "four slash"  
 `8/` *( n -- n' )*  "eight slash"  
-Multiply or divide by a small multiple of 2.  These are faster than `lshift` and `rshift`.
+Multiply or divide by a small power of 2.  These are faster than `lshift` and `rshift`.
 
 
 
