@@ -28,10 +28,10 @@ Forth definitions {
 
 : zeroes, ( n -- ) rom* @ 2dup + swap ?do 0 i c! loop rom* +! ;
 
-:  string, ( addr u -- ) rom* @   2dup + rom* !   swap cmove ;
-: cstring, ( addr u -- ) dup c, string, ;
-:  rom"    ( "text" -- ) [char] " parse  string, ;
-:  romc"   ( "text" -- ) [char] " parse cstring, ;
+:  ascii, ( addr u -- ) rom* @   2dup + rom* !   swap cmove ;
+: #ascii, ( addr u -- ) dup c, ascii, ;
+:  ascii" ( "text" -- ) [char] " parse  ascii, ;
+: #ascii" ( "text" -- ) [char] " parse #ascii, ;
 
 : romaddr ( addr -- romaddr ) rom @ + ;
 : roml@ ( romaddr -- u ) romaddr l@ >4< ;           aka rom@
@@ -47,7 +47,8 @@ Forth definitions {
 
 Host definitions
 : freerom ( -- )
-    romstats   rom @ free throw   rom off rom* off   cr depth if .s cr endif ;
+    romstats   rom @ free throw   rom off rom* off
+    cr depth if .s cr endif   bye ;
 
 Forth definitions {
 : printrom ( -- ) rom* @ rom @ 512 + ?do i c@ hex. loop cr freerom ;

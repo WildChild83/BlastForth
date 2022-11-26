@@ -83,7 +83,10 @@ Forth definitions
         [a2] tos move, d6 begin -[a2] -[a1] move, loop 4 # sp add, next
                                                     host/target: roll
 
-{ :noname ; }   anon next   host/target: noop       aka chars
+{ :noname ; }   anon next   host/target: noop       aka chars   aka bytes
+
+{ :noname 10 lshift ; }
+anon 10 # d1 move, d1 tos lsl, next                 host/target: kilobytes
 
 ( ---------------------------------------------------------------------------- )
 (       Dumb Words  [aka "compile-only"]                                       )
@@ -93,16 +96,23 @@ code  h@        tos a1 move, tos clear, [a1] tos h move, next
 code  c@        tos a1 move, tos clear, [a1] tos c move, next
 code sh@        tos a1 move, [a1] tos h move, tos ext, next
 code sc@        tos a1 move, [a1] tos c move, tos h ext, tos ext, next
-code   !        tos a1 move, [a1] pop, tos pop, next
-code  h!        tos a1 move, 2 # a1 add, [a1] h pop, tos pop, next
-code  c!        tos a1 move, 3 # a1 add, [a1] c pop, tos pop, next
-code  2@        tos a1 move, [a1]+ tos move, [a1] push, next
-code  2!        tos a1 move, [a1]+ pop, [a1]+ pop, tos pop, next
+code   !        tos a1 move, [sp]+ [a1] move, tos pop, next
+code  h!        tos a1 move, 2 # sp add, [sp]+ [a1] h move, tos pop, next
+code  c!        tos a1 move, 3 # sp add, [sp]+ [a1] c move, tos pop, next
+code  2@        tos a1 move, [a1]+ tos move, [a1] -[sp] move, next
+code  2!        tos a1 move, [sp]+ [a1]+ move, [sp]+ [a1]+ move, tos pop, next
 code  +!        tos a1 move, d1 pop, d1 [a1]   add, tos pop, next
 code h+!        tos a1 move, d1 pop, d1 [a1] h add, tos pop, next
 code c+!        tos a1 move, d1 pop, d1 [a1] c add, tos pop, next
 code 2+!        tos a1 move, d1 pop, d2 pop, [a1] d3 move,
                 d2 [a1 cell +] add, d1 d3 addx, d3 [a1] move, tos pop, next
+
+code on         tos a1 move, -1 # tos move, tos [a1] move, tos pop, next
+code off        tos a1 move,  0 # tos move, tos [a1] move, tos pop, next
+
+code count      tos a1 move, tos clear, [a1]+ tos c move, a1 push, next
+code halfcount  tos a1 move, tos clear, [a1]+ tos h move, a1 push, next
+code cellcount  tos a1 move, [a1]+ tos move, a1 push, next
 
 code 2drop      cell # sp add, tos pop, next
 code 2dup       d1 peek, tos push, d1 push, next
@@ -137,6 +147,12 @@ code d+         d1 pop, d2 pop, [sp]+ d1 add, d2 tos addx, d1 push, next
 code d-         d1 pop, d2 pop, d1 neg, tos neg,
                 [sp]+ d1 add, d2 tos addx, d1 push, next
 
+code h*         2 # sp add, [sp]+ tos h muls, next
+code h/         d1 pop, tos d1 divs, d1 tos h move, tos ext, next
+code hmod       d1 pop, tos d1 divs, d1 swap, d1 tos h move, tos ext, next
+code h/mod      d1 pop, tos d1 divs, d1 tos h move, tos ext,
+                d1 swap, d1 ext, d1 push, next
+
 code arshift    d1 pop, tos d1   asr, d1 tos move, next
 code lrotate    d1 pop, tos d1   rol, d1 tos move, next
 code rrotate    d1 pop, tos d1   ror, d1 tos move, next
@@ -158,27 +174,55 @@ code drshift
 
 code 16rotate   tos swap, next          synonym 32drotate swap
 
+code under+   tos [sp cell +] add, tos pop, next
+code under-   tos [sp cell +] sub, tos pop, next
+
 ( ---------------------------------------------------------------------------- )
 (       Flow Control Words                                                     )
 ( ---------------------------------------------------------------------------- )
-{ : (disp?) ( n -- )   ?shalf not abort" Destination out of range." ; }
-{ : (disp)  ( u -- n ) romspace      - 2 - (disp?) ; }
-{ : (disp>) ( u -- n ) romspace swap - 2 - (disp?) ; }
+{ : (disp?) ( n -- )    ?shalf not abort" Destination out of range." ; }
+{ : (disp)  ( u -- n )  romspace      - 2 - (disp?) ; }
+{ : (disp>) ( u -- n )  romspace swap - 2 - (disp?) ; }
+{ : (orig)  ( -- orig ) romspace 0 h, ; }
+{ : (orig>) ( orig -- ) ?dup if dup (disp>) swap romh! endif ; }
+{ : (dest)  ( -- dest ) romspace ; }
+{ : (>dest) ( dest -- ) (disp) h, ; }
 
 code  branch    [tp]+ tp h add, next
 code 0branch    d1 h read, tos test, z= if d1 tp h add, endif tos pop, next
 
-{ : if    ( -- orig ) comp-only 0branch  romspace 0 h, ; }
-{ : ahead ( -- orig ) comp-only  branch  romspace 0 h, ; }
-{ : then  ( orig -- ) comp-only dup (disp>) swap romh! ; }      aka endif
+{ : if    ( -- orig ) comp-only 0branch (orig) ; }
+{ : ahead ( -- orig ) comp-only  branch (orig) ; }
+{ : then  ( orig -- ) comp-only (orig>) ; }         aka endif
 
-{ : begin ( -- dest ) comp-only romspace ; }
-{ : again ( dest -- ) comp-only  branch (disp) h, ; }
-{ : until ( dest -- ) comp-only 0branch (disp) h, ; }
+{ : begin ( -- dest ) comp-only (dest) ; }
+{ : again ( dest -- ) comp-only  branch (>dest) ; }
+{ : until ( dest -- ) comp-only 0branch (>dest) ; }
 
-{ : else  ( orig1 -- orig2 )     comp-only } ahead { swap } then { ; }
-{ : while  ( dest -- orig dest ) comp-only } if { swap ; }
-{ : repeat ( orig dest -- )      comp-only } again then { ; }
+{ : else  ( orig1 -- orig2 )     comp-only  branch  (orig)  swap  (orig>) ; }
+{ : while  ( dest -- orig dest ) comp-only 0branch  (orig)  swap   ; }
+{ : repeat ( orig dest -- )      comp-only  branch (>dest) (orig>) ; }
+
+( ---------------------------------------------------------------------------- )
+code   (do)     [sp]+ -[rp] move, tos rpush, tos pop, next
+code  (?do)     d1 h read, [sp] tos comp, ^ (do) displacement z<> branch?,
+                d1 tp h add, 4 # sp add, tos pop, next
+code  (loop)    d1 h read, d2 rpop, d2 inc, [rp] d2 comp,
+                z<> if d1 tp h add, d2 rpush, next, endif 4 # rp add, next
+code (+loop)    d1 h read, d2 rpop, d3 rpeek, d3 d2 comp, d4 neg set?,
+                tos d2 add, d3 d2 comp, tos neg set?, tos d4 b comp,
+                z= if d1 tp h add, d2 rpush, tos pop, next, endif
+                4 # rp add, tos pop, next
+code (-loop)    d1 h read, d2 rpop, d3 rpeek, d2 d3 comp, d4 neg set?,
+                tos d2 sub, d2 d3 comp, tos neg set?, tos d4 b comp,
+                z= if d1 tp h add, d2 rpush, tos pop, next, endif
+                4 # rp add, tos pop, next
+
+{ :   do  ( --  0   dest ) comp-only   (do)   0      (dest)  ; }
+{ :  ?do  ( -- orig dest ) comp-only  (?do)  (orig)  (dest)  ; }
+{ :  loop ( orig dest -- ) comp-only  (loop) (>dest) (orig>) ; }
+{ : +loop ( orig dest -- ) comp-only (+loop) (>dest) (orig>) ; }
+{ : -loop ( orig dest -- ) comp-only (-loop) (>dest) (orig>) ; }
 
 ( ---------------------------------------------------------------------------- )
 (       Other Words                                                            )

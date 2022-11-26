@@ -151,6 +151,7 @@ synonym [if]    [if]    immediate
 synonym [else]  [else]  immediate
 synonym [then]  [then]  immediate
 synonym [endif] [then]  immediate
+synonym bye     bye
 
 : .( ( "text" -- ) [char] ) parse type ; immediate
 

@@ -6,63 +6,177 @@
 include system/glossary.fs
 
 ( ---------------------------------------------------------------------------- )
-{  1  megabytes constant SizeOfROM }    \ default = 1 MB,  max supported = 4 MB
+(       Project Attributes                                                     )
+( ---------------------------------------------------------------------------- )
+Forth definitions {
+
+\ Rom output file size.  Default is 1MB, max supported is 4MB.  
+1 megabytes constant SizeOfROM
+
+\ If DEBUG=true then Rom file includes extra sanity checks and error reporting
+\    (and a larger file size).  Set to false for "release version."
+true constant DEBUG
+
+\ The Data Stack, Return Stack, and Float Stack (if used) will each occupy
+\    "StackSize" bytes in RAM.  Must be a multiple of 4.
+128 bytes constant StackSize
+
+\ If FloatStack=true, the program will be built with floating-point support,
+\    including a dedicated stack for floating-point numbers.
+false constant FloatStack
+
+( ---------------------------------------------------------------------------- )
 include system/romfile.fs
 
 ( ---------------------------------------------------------------------------- )
+( **************************************************************************** )
 (       Sega ROM Header                                                        )
+( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
-( Console )      rom" SEGA GENESIS    "
-( Copyright )    rom" (C)NAME 20xx    "
-( Domestic )     rom" Japanese Name                                   "
-( Foreign )      rom" Western Name                                    "
-( Version # )    rom" GM 00000001-01"
-( Checksum )          0 h,
-( I/O Support )  rom" J               "
-( ROM Start )         0 ,
+( Console )      ascii" SEGA GENESIS    "
+( Copyright )    ascii" (C)NAME 20xx    "
+( Domestic )     ascii" Japanese Name                                   "
+( Foreign )      ascii" Western Name                                    "
+( Version # )    ascii" GM 00000001-01"
+( Checksum )            0 h,
+( I/O Support )  ascii" J               "
+( ROM Start )           0 ,
 ( ROM End )     SizeOfROM { 1- } ,
-( RAM Start )   $FF0000 ,
-( RAM End )     $FFFFFF ,
-( SRAM? )             0 ,
-( -- )                0 ,
-( SRAM Start )        0 ,
-( SRAM End )          0 ,
-( -- )            0 , 0 ,
-( Notes )        rom"                                         "
-( Countries )    rom" JUE             "
+( RAM Start )     $FF0000 ,
+( RAM End )       $FFFFFF ,
+( SRAM? )               0 ,
+( -- )                  0 ,
+( SRAM Start )          0 ,
+( SRAM End )            0 ,
+( -- )              0 , 0 ,
+( Notes )        ascii"                                         "
+( Countries )    ascii" JUE             "
 
 ( ---------------------------------------------------------------------------- )
-\ warn if header is the wrong size [comment this line to disable the warning]
+\ Warn if header is the wrong size [comment this line to disable the warning]
 romspace { 512 bytes <> } [if] .( Incorrect Sega ROM Header. ) [then]
 
 ( ---------------------------------------------------------------------------- )
+( **************************************************************************** )
 (       Code Base                                                              )
+( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
 include system/68k.fs       \ Motorola 68000 assembler
 include system/forth.fs     \ Forth cross-compiler, standard defining words
 include system/core.fs      \ all the most important Forth words
 
 ( ---------------------------------------------------------------------------- )
-(       The "Next" Mechanism  [i.e. the heart of the whole system]             )
+( **************************************************************************** )
+(       The "Next" Mechanism   [the heart of the whole system]                 )
+( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
-\ fetch the next word from the instruction thread and jump to it
-asm data next&
-    a4 read,            \ A4 = code field address [from instruction thread]
-    [a4]+ a3 move,      \ A3 = code field,  A4 = data field address
-    [a3] jump,          \ jump to code field
+\ fetch the next cell from the instruction thread and jump to it
+create next&  asm
+    dfa read,           \ DFA = code field address [from instruction thread]
+    [dfa]+ a1 move,     \  A1 = code field,  DFA = data field address
+    [a1] jump,          \ jump to code field
     end
 
 ( ---------------------------------------------------------------------------- )
-(       More System Files                                                      )
+( **************************************************************************** )
+(       Floating-Point Stack                                                   )
+( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
+Forth definitions
+
+FloatStack [if]
+    \ If you're using floats then uncomment one and ONLY one of the following:
+    include system/floatstack/float16.fs   \ 17-bit mantissa, 16-bit exponent
+    \ include system/floatstack/float32.fs   \ 33-bit mantissa, 32-bit exponent
+    \ include system/floatstack/ieee32.fs    \ 24-bit mantissa,  8-bit exponent
+    \ include system/floatstack/ieee64.fs    \ 48-bit mantissa, 16-bit exponent
+
+[else]
+    \ If we're not going to use a floating-point stack then make
+    \    'A4' available as a CPU register mnemonic
+    Assembler68k definitions
+    synonym  a4  fp         synonym [a4] [fp]       synonym  [a4]+ [fp]+
+    synonym [a4 [fp         synonym  a4+  fp+       synonym -[a4] -[fp]
+[then]
+
+( ---------------------------------------------------------------------------- )
+( **************************************************************************** )
+(       Sound Driver                                                           )
+( **************************************************************************** )
+( ---------------------------------------------------------------------------- )
+include system/audio/z80.fs
+
+( ---------------------------------------------------------------------------- )
+include system/audio/silence.fs
+
+( ---------------------------------------------------------------------------- )
+( **************************************************************************** )
+(       More System Files                                                      )
+( **************************************************************************** )
+( ---------------------------------------------------------------------------- )
+include system/vdp.fs           \ video display processor
+include system/text.fs          \ text disply, terminal output
 include system/interrupts.fs    \ vertical and horizontal blank handlers
 
 ( ---------------------------------------------------------------------------- )
+( **************************************************************************** )
+(       Default Video Configuration                                            )
+( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
+Forth definitions
+
+: init-video ( -- )
+    (init-video-config)     2 autoinc 
+    $C000 planeA        $B800 spritePlane       +h320 +v224 +ntsc
+    $E000 planeB        $BC00 hScrollTable      64x64planes
+    $B000 windowPlane     255 hbi-counter       !video-config ;
+
+create default-palette
+    $0000 h, $0008 h, $0080 h, $0800 h, $0088 h, $0808 h, $0880 h, $0AAA h,
+    $0444 h, $000E h, $00E0 h, $0E00 h, $00EE h, $0E0E h, $0EE0 h, $0EEE h,
+
+( ---------------------------------------------------------------------------- )
+( **************************************************************************** )
+(       Program Entry Point                                                    )
+( **************************************************************************** )
+( ---------------------------------------------------------------------------- )
+Forth definitions
+
+68k-start: asm
+
+    \ disable interrupts
+    $2700 # sr move,
+    
+    \ Trademark Security System check
+    $A10008 [#] test, z= if
+        $A1000C [#] w test, z= if
+            $A10001 [#] d1 b move, $F # d1 b and, z<> if
+                $53454741 # $A14000 [#] move,
+    endif endif endif
+
+    \ allot stack RAM
+    alignram StackSize allot here # rp move,
+             StackSize allot here # sp move,
+    FloatStack [if] StackSize allot here # fp move, [then]
+    
+    \ launch threading mechanism, transition to Forth code execution
+    next& # np move,  $4BFA0004 , next ]
+
+    \ set up video hardware
+    init-video    default-palette $00 16 store-color
+    15 init-text  planeA> to terminal page   0 to attributes
+    +video
+
+    \ user code entry point
+    [ PC: (:entry) 0 , { : :entry PC (:entry) rom! docolon& , } ] { ; } ]
+    
+    \ hang the system if :entry returns...
+    begin again ;
+
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
@@ -72,7 +186,7 @@ include system/interrupts.fs    \ vertical and horizontal blank handlers
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
-(       Useful Information                                                     )
+(       Hardware Cheat Sheet                                                   )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
 \   68k Status Register     15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
@@ -91,7 +205,7 @@ include system/interrupts.fs    \ vertical and horizontal blank handlers
 \                            -  -  -  -  -  -  E  F VI SO SC OD VB HB DMA PAL
 \       E:   FIFO is empty
 \       F:   FIFO is full
-\       VI:  Vertical Interrupt occured
+\       VI:  Vertical Interrupt occurred
 \       SO:  Sprite scanline limit reached (17+ for 256-wide, 21+ for 320)
 \       SC:  Sprite collision
 \       OD:  Odd frame displayed (interlace mode only)
@@ -216,7 +330,7 @@ include system/interrupts.fs    \ vertical and horizontal blank handlers
 \       $6000    |
 \       $8000    |
 \       $A000    V
-\       $B000   Window Nametable ($B000), Sprite Table ($D800), HScroll ($BC00)
+\       $B000   Window Nametable ($B000), Sprite Table ($B800), HScroll ($BC00)
 \       $C000   Screen A Nametable
 \       $D000   
 \       $E000   Screen B Nametable

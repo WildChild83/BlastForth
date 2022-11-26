@@ -17,16 +17,16 @@
     >r  r@  r>  2>r  2r@  2r>  @  !  +!  c@  c!  2@  2!  l!  w!  l@  w@
             +  -  1+  1-  *  m*  /  mod  /mod  */  */mod  2*  2/
         <#  #  #s  #>  :  '  .  d.  u.  ud.  .r  d.r  u.r  ud.r  .s  ]
-            abort  abs  allocate  and  base  bin  bl  >body  bye
+    abort  abs  align  aligned  allocate  allot  and  base  bin  bl  >body  bye
             cell+  cells  char  close-file  cmove  cmove>  compare
             constant  2constant  count  cr  create  create-file
             d>s  decimal  depth  drop  2drop  dup  2dup  ?dup
-        emit  execute  [else]  false  find-name  free  hex  hold
+        emit  execute  [else]  false  find-name  free  here  hex  hold
                 i  [if]  immediate  include  invert  j  k
             lshift  max  min  move  negate  nip  2nip  :noname
             off  on  or  over  2over  page  parse  parse-name  pick
     r/o  r/w  refill  roll  rot  2rot  rshift  s>d  space  spaces  swap  2swap
-        [then]  throw  true  tuck  2tuck  type  variable  2variable
+    [then]  throw  true  tuck  2tuck  type  value  2value  variable  2variable
                         w/o  within  write-file  xor
 
                             s>number?  s>unumber?
@@ -59,12 +59,14 @@
 : endcase no-int postpone endcase ; immediate
 : does>   no-int postpone does>   ; immediate
 : ."      no-int postpone ."      ; immediate
+: to      no-int postpone to      ; immediate
 : [       no-int postpone [       ; immediate
 : [char]  no-int postpone [char]  ; immediate
 : abort"  no-int postpone abort"  ; immediate
 
 : literal   no-int postpone literal  ; immediate
 : 2literal  no-int postpone 2literal ; immediate
+: postpone  no-int postpone postpone ; immediate
 
 : s" state @ if postpone s" exit endif [char] " parse ; immediate
 

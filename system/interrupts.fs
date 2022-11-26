@@ -25,11 +25,11 @@ Forth definitions
 ( ---------------------------------------------------------------------------- )
 variable vblank         \ code field address of software vblank handler
 
-asm data vbnext& ( -- )
-    next& [#] np lea,   \ restore NP to "standard next"
-    vblank [#] a4 move, \ A4 = code field address [from vblank variable]
-    [a4]+ a3 move,      \ A3 = code field,  A4 = data field address
-    [a3] jump,          \ jump to code field
+create vbnext&  asm
+    next& [#] np lea,       \ restore NP to "standard next"
+    vblank [#] dfa move,    \ DFA = code field address [from vblank variable]
+    [dfa]+ a1 move,         \  A1 = code field,  DFA = data field address
+    [a1] jump,              \ jump to code field
     end
 
 ( ---------------------------------------------------------------------------- )

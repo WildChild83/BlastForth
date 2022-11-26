@@ -12,16 +12,23 @@
 (           - 68k.fs                                                           )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
+
+( ---------------------------------------------------------------------------- )
+(                                                                              )
+(       TODO:                                                                  )
+(           - fix Values so they work in upper 32kb                            )
+(                                                                              )
+( ---------------------------------------------------------------------------- )
 Forth definitions
 
 { create state   false host, }
 { : compiling? state @ ; }
 { : comp-only  compiling? not -14 and throw ; }
-{ : host-only  compiling? abort" Compiling a host machine word." ; }
+{ : host-only  compiling? abort" Compiling a host-only word." ; }
 
 ( ---------------------------------------------------------------------------- )
 (       A7=Return Stack     A6=Data Stack       A5=Thread Pointer              )
-(       A0=Next Pointer                         D0=Top of Data Stack           )
+(       A4=Float Stack      A0=Next Pointer     D0=Top of Data Stack           )
 ( ---------------------------------------------------------------------------- )
 { :   PC    ( -- romaddr ) alignrom romspace ; }
 { :   PC:   ( -- ) PC constant ; }
@@ -29,7 +36,7 @@ Forth definitions
 
 Assembler68k wid { constant asm68k-wid }
 { :  asm              host-only clean alignrom asm68k-wid >order ; }
-{ : rawcode ( "name") host-only create PC host, asm does> ( -- romaddr ) @ ; }
+{ : rawcode ( "name") host-only create PC host, asm   does> host-only @ ; }
 { :    anon ( -- xt ) host-only PC doprim, asm ; }
 { :    code ( "name") host-only
     create PC host, doprim, asm does> comp-only @ , ; }
@@ -43,16 +50,8 @@ Forth definitions
 { : host/target: ( hostxt targetxt "name" -- ) host-only create host, host,
     does> ( .. -- ) compiling? if @ , else cell+ @ execute endif ; }
 
-( ---------------------------------------------------------------------------- )
-(       ROM Data Areas                                                         )
-( ---------------------------------------------------------------------------- )
-PC: <dodata&>
-{ : codefield, ( romaddr -- ) PC host, , ; }
-{ : data ( "name" -- ) host-only
-    create <dodata&> 4 + codefield,
-    does> @ compiling? if , exit endif 4 + ; }
-
-asm data dodata& ( -- addr ) tos push, a4 tos move, next
+{ : ' ( "name" -- xt )   host-only ' >body @ ; }
+{ : ^ ( "name" -- addr ) host-only } ' { 4 + ; }
 
 ( ---------------------------------------------------------------------------- )
 (       Literals                                                               )
@@ -62,21 +61,37 @@ asm data dodata& ( -- addr ) tos push, a4 tos move, next
 
 code lit   ( -- n ) tos push, tos read, next
 code plit  ( -- u ) tos push, tos clear, tos h read, next
-code nlit  ( -- n ) tos push, -1 # tos move, [a4] tos h move, next
-code 2lit  ( -- d ) tos push, -[sp] read, tos read, next
+code nlit  ( -- n ) tos push, -1 # tos move, tos h read, next
+code 2lit  ( -- d ) tos push, [tp]+ -[sp] move, tos read, next
 code 2plit ( -- u u )
-    tos push, -[sp] h read, -[sp] h clear, tos clear, tos h read, next
+    tos push, [tp]+ -[sp] h move, -[sp] h clear, tos clear, tos h read, next
 code 2nlit ( -- n n )
-    tos push, -[sp] h read, -1 # -[sp] h move, 
+    tos push, [tp]+ -[sp] h move, -1 # -[sp] h move, 
     -1 # tos move, tos h read, next
 
-{ : literal  ( n -- )
+{ : literal  ( n -- ) comp-only
     ?ph if plit h, exit endif ?nh if nlit h, exit endif lit , ; }
-{ : (2lit)   ( n n -- ) 2lit , , ; }
-{ : 2literal ( n n -- )
+{ : (2lit)   ( n n -- ) comp-only 2lit , , ; }
+{ : 2literal ( n n -- ) comp-only
     ?ph if swap ?ph if 2plit h, h, exit endif (2lit) exit endif
     ?nh if swap ?nh if 2nlit h, h, exit endif (2lit) exit endif
     swap (2lit) ; }
+
+( ---------------------------------------------------------------------------- )
+(       Created Words                                                          )
+( ---------------------------------------------------------------------------- )
+{ 0 value lastxt }
+
+PC: <docreated&>
+{ : codefield, ( romaddr -- ) PC dup host,  to lastxt   ,  ; }
+{ : create ( "name" -- ) host-only
+    create <docreated&> 4 + codefield,
+    does> @ compiling? if , exit endif 4 + ; }
+create docreated&    asm tos push, dfa tos move, next
+
+{ : (newxt) ( romaddr -- ) host-only lastxt rom! ; }
+{ : ;code ( -- ) host-only   
+    PC postpone literal   postpone (newxt)   postpone ;   asm  ; immediate }
 
 ( ---------------------------------------------------------------------------- )
 (       Colon Definitions                                                      )
@@ -91,54 +106,63 @@ code 2nlit ( -- n n )
 }
 code exit ( -- ) tp rpop, next
 
-Assembler68k definitions
-{ : next: ( -- ) tp rpush, $4BFA h, 4 h, next } ] { ; }
-
-Forth definitions
-asm { : semantics> ( -- addr ) tos push, a4 tos move, next: ; } end
-
-asm data docolon& ( -- ) tp rpush, a4 tp move, next
-{ : ; ( -- ) } exit { state off ; }
+create docolon&    asm tp rpush, dfa tp move, next
+{ : ; ( -- ) comp-only } exit { state off ; }
 { : : ( "name" -- ) host-only
     create docolon& codefield, } ] { does> ( -- ) comp-only @ , ; }
+
+{ : :noname ( -- xt ) host-only  PC  docolon& codefield, } ] { ; }
+
+{ synonym {:} : }
+{ synonym {;} ; }
+
+asm { : (dodoes>) ( -- addr ) host-only
+    tos push, dfa tos move, tp rpush, $4BFA0004 , next, } ] { ; } end
+{ : does> ( -- ) host-only
+    PC postpone literal   postpone (newxt)   postpone ; (dodoes>) ; immediate }
+
+code execute ( xt -- ) tos dfa move, tos pop, [dfa]+ a1 move, [a1] jump, end
+
+{ : ]L    ( n -- ) host-only state on }  literal [ ] { ; }
+{ : ]2L ( n n -- ) host-only state on } 2literal [ ] { ; }
 
 ( ---------------------------------------------------------------------------- )
 (       Constants                                                              )
 ( ---------------------------------------------------------------------------- )
 { : h,rom, ( n -- ) $FFFF and dup host, h, ; }
 
-asm data doconstp& ( -- u ) tos push, tos clear, [a4] tos h move, next
+create doconstp&   asm tos push, tos clear, [dfa] tos h move, next
 { : pconstant ( n "name" -- ) host-only
     create doconstp& codefield,  h,rom,
     does> ( -- n ) compiling? if @ , exit endif cell+ @ ; }
 
-asm data doconstn& ( -- n ) tos push, -1 # tos move, [a4] tos h move, next
+create doconstn&   asm tos push, -1 # tos move, [dfa] tos h move, next
 { : nconstant ( n "name" -- ) host-only
     create doconstn& codefield,  h,rom,
     does> ( -- n ) compiling? if @ , exit endif cell+ @ -65536 or ; }
 
-asm data doconst& ( -- n ) tos push, [a4] tos move, next
+create doconst&    asm tos push, [dfa] tos move, next
 { : constant ( n "name" -- ) host-only
     ?ph if pconstant exit endif   ?nh if nconstant exit endif
     create doconst& codefield, dup host, , 
     does>  compiling? if @ , exit endif cell+ @ ; }
 
-asm data do2constp& ( -- d )
-    tos push, tos clear, [a4]+ tos h move, 
-    [a4]+ -[sp] h move, -[sp] h clear, next
+create do2constp&   asm
+    tos push, tos clear, [dfa]+ tos h move, 
+    [dfa]+ -[sp] h move, -[sp] h clear, next
 { : 2pconstant ( d "name" -- ) host-only
     create do2constp& codefield,  h,rom,  h,rom,
     does>  compiling? if @ , exit endif cell+ dup @ swap cell+ @ ; }
 
-asm data do2constn& ( -- d )
-    tos push, -1 # tos move, [a4]+ tos h move, 
-    [a4]+ -[sp] h move, -1 # -[sp] h move, next
+create do2constn&   asm
+    tos push, -1 # tos move, [dfa]+ tos h move, 
+    [dfa]+ -[sp] h move, -1 # -[sp] h move, next
 { : 2nconstant ( d "name" -- ) host-only
     create do2constn& codefield,  h,rom,  h,rom,
     does>  compiling? if @ , exit endif
            cell+ dup @ -65536 or swap cell+ @ -65536 or ; }
 
-asm data do2const& ( -- d ) tos push, [a4]+ push, [a4] tos move, next
+create do2const&   asm tos push, [dfa]+ push, [dfa] tos move, next
 { : (2const) ( d "name" -- )
     create do2const& codefield, dup host, , dup host, ,
     does>  compiling? if @ , exit endif cell+ dup @ swap cell+ @ ; }
@@ -151,11 +175,13 @@ asm data do2const& ( -- d ) tos push, [a4]+ push, [a4] tos move, next
 (       Memory Buffers                                                         )
 ( ---------------------------------------------------------------------------- )
 { create ramspace $FF0000 host, }
+{ : allot ( n -- ) ramspace +! ; }
+{ : here  ( -- u ) ramspace  @ ; }
 { : +ramspace> ( n1 -- u1 ) ramspace @ tuck + ramspace ! ; }
 { : alignram ( -- ) ramspace @ 1+ -2 and ramspace ! ; }
 { : <memory>  @ compiling? if , exit endif 4 + romh@ $FF0000 + ; }
 
-asm data domem& ( -- addr ) tos push, $FF0000 # tos move, [a4] tos h move, next
+create domem&   asm tos push, $FF0000 # tos move, [dfa] tos h move, next
 { : buffer: ( u "name" -- ) host-only 
     create domem& codefield, +ramspace> h, does> <memory> ; }
 
@@ -167,49 +193,51 @@ asm data domem& ( -- addr ) tos push, $FF0000 # tos move, [a4] tos h move, next
 ( ---------------------------------------------------------------------------- )
 (       Values                                                                 )
 ( ---------------------------------------------------------------------------- )
-{ :  to   ( "name" -- ) comp-only ' >body dup cell+ @ ,      @ 4 + romh@ h, ; }
+{ :  to ( n "name" -- ) comp-only ' >body dup cell+ @ ,      @ 4 + romh@ h, ; }
 { : +to ( n "name" -- ) comp-only ' >body dup 2 cells + @ ,  @ 4 + romh@ h, ; }
 
 ( ---------------------------------------------------------------------------- )
-asm data dovalue& ( -- n )
-    tos push, $FF0000 [#] a1 lea, [a4] a1 h add, [a1] tos move, next
-asm data tovalue& ( n -- )
+\ FIXME: Values in upper 32kb of RAM won't work
+
+create dovalue&   asm
+    tos push, $FF0000 [#] a1 lea, [dfa] a1 h add, [a1] tos move, next
+create tovalue&   doprim, asm
     $FF0000 [#] a1 lea, [tp]+ a1 h add, tos [a1] move, tos pop, next
-asm data +tovalue& ( n -- )
+create +tovalue&  doprim,  asm
     $FF0000 [#] a1 lea, [tp]+ a1 h add, tos [a1] add, tos pop, next
 { : value ( "name" -- ) host-only 
     create dovalue& codefield, tovalue& host, +tovalue& host,
     alignram 4 +ramspace> h, does> <memory> ; }
 
-asm data dohvalue& ( -- h )
-    tos push, $FF0000 [#] a1 lea, [a4] a1 h add,
+create dohvalue&   asm
+    tos push, $FF0000 [#] a1 lea, [dfa] a1 h add,
     tos clear, [a1] tos h move, next
-asm data tohvalue& ( h -- )
+create tohvalue&   doprim, asm
     $FF0000 [#] a1 lea, [tp]+ a1 h add, tos [a1] h move, tos pop, next
-asm data +tohvalue& ( h -- )
+create +tohvalue&  doprim, asm
     $FF0000 [#] a1 lea, [tp]+ a1 h add, tos [a1] h add, tos pop, next
 { : hvalue ( "name" -- ) host-only 
     create dohvalue& codefield, tohvalue& host, +tohvalue& host,
     alignram 2 +ramspace> h, does> <memory> ; }
 
-asm data docvalue& ( -- c )
-    tos push, $FF0000 [#] a1 lea, [a4] a1 h add,
+create docvalue&   asm
+    tos push, $FF0000 [#] a1 lea, [dfa] a1 h add, 
     tos clear, [a1] tos c move, next
-asm data tocvalue& ( c -- )
+create tocvalue&   doprim, asm
     $FF0000 [#] a1 lea, [tp]+ a1 h add, tos [a1] c move, tos pop, next
-asm data +tocvalue& ( c -- )
+create +tocvalue&  doprim, asm
     $FF0000 [#] a1 lea, [tp]+ a1 h add, tos [a1] c add, tos pop, next
 { : cvalue ( "name" -- ) host-only 
     create docvalue& codefield, tocvalue& host, +tocvalue& host,
     1 +ramspace> h, does> <memory> ; }
 
-asm data do2value& ( -- n n )
-    tos push, $FF0000 [#] a1 lea, [a4] a1 h add,
+create do2value&   asm
+    tos push, $FF0000 [#] a1 lea, [dfa] a1 h add,
     tos clear, [a1]+ tos move, [a1]+ push, next
-asm data to2value& ( n n -- )
+create to2value&   doprim, asm
     $FF0000 [#] a1 lea, [tp]+ a1 h add,
     tos [a1]+ move, [sp]+ [a1] move, tos pop, next
-asm data +to2value& ( n n -- )
+create +to2value&  doprim, asm
     $FF0000 [#] a1 lea, [tp]+ a1 h add, [a1]+ d2 move, [a1] d1 move,
     [sp]+ d1 add, tos d2 addx, d1 [a1] move, d2 -[a1] move, tos pop, next
 { : 2value ( "name" -- ) host-only 
@@ -219,8 +247,9 @@ asm data +to2value& ( n n -- )
 ( ---------------------------------------------------------------------------- )
 (       Deferred Words                                                         )
 ( ---------------------------------------------------------------------------- )
-asm data dodefer& ( -- )
-    $FF0000 # d1 move, [a4] d1 h move, d1 a4 move, [a4]+ a3 move, [a3] jump, end
+create dodefer&   asm
+    $FF0000 # d1 move, [dfa] d1 h move,
+    d1 dfa move, [dfa]+ a1 move, [a1] jump, end
 { : defer ( "name" -- ) host-only 
     create dodefer& codefield, 4 +ramspace> h, does> <memory> ; }
 
@@ -237,8 +266,27 @@ code defer! ( xt1 xt2 -- )
     parse-name  find-name  name>interpret >body @ } literal { defer! ; }
 
 ( ---------------------------------------------------------------------------- )
+(       Data Lists                                                             )
+( ---------------------------------------------------------------------------- )
+{ variable xt1[    variable xt2[ }
+{ : number[ s>number? not abort" Invalid number." d>s 
+            xt2[ @ execute not abort" Number out of range." xt1[ @ execute ; }
+{ : "exec"  find-name  name>interpret  execute ;
+{ : eval[   2dup s" \" str= >r 2dup s" (" str= r> or if "exec" exit endif
+            2dup s" ]" str= if 2drop xt1[ off exit endif  number[ ; }
+{ : parse[  parse-name ?dup if eval[ exit endif drop (refill) ; }
+{ : x[: ( xt1 xt2 ) host-only create host, host, does> ( numbers.. ) host-only
+    cellcount xt2[ ! @ xt1[ !   begin parse[  xt1[ @ not until ; }
+
+{ '  , ' ?cell } x[: cells[
+{ ' h, ' ?half } x[: halves[
+{ ' c, ' ?char } x[: chars[     aka bytes[
+
+( ---------------------------------------------------------------------------- )
 (       Miscellaneous other stuff                                              )
 ( ---------------------------------------------------------------------------- )
+code  interrupts ( -- ) $2300 # sr move, next
+code -interrupts ( -- ) $2700 # sr move, next
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

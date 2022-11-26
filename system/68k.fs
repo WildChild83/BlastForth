@@ -39,7 +39,7 @@ Glossary Assembler68k definitions
 ( ---------------------------------------------------------------------------- )
 (       Registers                                                              )
 ( ---------------------------------------------------------------------------- )
-$1000 constant tos  $1004 constant d4   $2008 constant np   $200C constant a4
+$1000 constant tos  $1004 constant d4   $2008 constant np   $200C constant fp
 $1001 constant d1   $1005 constant d5   $2009 constant a1   $200D constant tp
 $1002 constant d2   $1006 constant d6   $200A constant a2   $200E constant sp
 $1003 constant d3   $1007 constant d7   $200B constant a3   $200F constant rp
@@ -97,7 +97,7 @@ variable ext1       variable ext2       variable ext
 %010001 addr: [a1]  %011001 addr: [a1]+  %100001 addr: -[a1]  %101001 addr: [a1
 %010010 addr: [a2]  %011010 addr: [a2]+  %100010 addr: -[a2]  %101010 addr: [a2
 %010011 addr: [a3]  %011011 addr: [a3]+  %100011 addr: -[a3]  %101011 addr: [a3
-%010100 addr: [a4]  %011100 addr: [a4]+  %100100 addr: -[a4]  %101100 addr: [a4
+%010100 addr: [fp]  %011100 addr: [fp]+  %100100 addr: -[fp]  %101100 addr: [fp
 %010101 addr: [tp]  %011101 addr: [tp]+  %100101 addr: -[tp]  %101101 addr: [tp
 %010110 addr: [sp]  %011110 addr: [sp]+  %100110 addr: -[sp]  %101110 addr: [sp
 %010111 addr: [rp]  %011111 addr: [rp]+  %100111 addr: -[rp]  %101111 addr: [rp
@@ -105,7 +105,7 @@ variable ext1       variable ext2       variable ext
 : (ndx) ( addr -- flag ) dup @ $38 and $28 <> dup if nip exit endif $8 rot +! ;    
 :  ndx: ( n "name" -- ) create host, does> ( -- )
     ea (ndx) if ea' (ndx) effect-error endif @ ext @ +! ;
-$080F ndx: tos+     $480F ndx: d4+      $880F ndx: np+      $C80F ndx: a4+
+$080F ndx: tos+     $480F ndx: d4+      $880F ndx: np+      $C80F ndx: fp+
 $180F ndx: d1+      $580F ndx: d5+      $980F ndx: a1+      $D80F ndx: tp+
 $280F ndx: d2+      $680F ndx: d6+      $A80F ndx: a2+      $E80F ndx: sp+
 $380F ndx: d3+      $780F ndx: d7+      $B80F ndx: a3+      $F80F ndx: rp+
@@ -127,6 +127,12 @@ $380F ndx: d3+      $780F ndx: d7+      $B80F ndx: a3+      $F80F ndx: rp+
     endcase 2drop ;
 : ext1, ( -- ) ext1 ea  (ext) ;
 : ext2, ( -- ) ext2 ea' (ext) ;
+
+( ---------------------------------------------------------------------------- )
+(       Data Field Address Register                                            )
+( ---------------------------------------------------------------------------- )
+synonym dfa  a3         synonym [dfa] [a3]      synonym -[dfa] -[a3]
+synonym dfa+ a3+        synonym [dfa  [a3       synonym  [dfa]+ [a3]+
 
 ( ---------------------------------------------------------------------------- )
 (       Operand Processors                                                     )
@@ -175,7 +181,7 @@ $C100 bcd: abcd,    $8100 bcd: sbcd,    $D100 addx: addx,   $9100 addx: subx,
 : single: ( opcode "name" -- ) create host, does> ( arg -- ) @ (single) ;
 $4000 single: negx,     $4400 single: neg,      $4600 single: not,
 
-: (and1) ( n opcode -- n' ) $F080 and + ;
+: (and1) ( n opcode -- n' ) $F100 and + ;
 : (and2) ( n opcode -- n' ) $0F00 and + ;
 : (data) ( arg1 arg2 opcode -- )
     >r 2arg case
@@ -190,9 +196,8 @@ $4000 single: negx,     $4400 single: neg,      $4600 single: not,
     nip <status> 0 r> (and2) opsize+ imm, clean ;
 : xor, ( arg1 arg2 -- ) $B000 (status) ;            aka eor,
 
-: (logic) ( arg1 arg2 opcode -- )
-    >r 2arg md' = if nip dreg r> (and1) ea, clean exit endif r> (status) ;
-: logic: ( opcode "name" -- ) create host, does> ( arg1 arg2 -- ) @ (logic) ;
+: logic: ( opcode "name" -- ) create host, does> ( arg1 arg2 -- )
+    @ >r 2arg md' = if nip dreg r> (and1) ea, clean exit endif r> (status) ;
 $C200 logic: and,       $8000 logic: or,
 
 : (quick) ( n arg opcode -- )
@@ -323,16 +328,16 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
 : unlink, ( areg -- )
     <long> 1arg a' <> invalid-error sreg $4E58 + h, clean ;  aka unlk,
 
-: swap, ( dreg -- ) <long> 1arg d' <> invalid-error sreg $4840 + h, ;
-: stop,  ( n # -- ) <word> } # { <> invalid-error $4E72 h, w imm#, ;
-: trap,  ( n # -- ) <long> } # { <> invalid-error 15 and $4E40 + h, ;
-: illegal,   ( -- ) <long> $4AFC h, ;
-: reset,     ( -- ) <long> $4E70 h, ;
-: nop,       ( -- ) <long> $4E71 h, ;
-: ireturn,   ( -- ) <long> $4E73 h, ;  aka rte,
-: return,    ( -- ) <long> $4E75 h, ;  aka rts,
-: trapv,     ( -- ) <long> $4E76 h, ;
-: ccreturn,  ( -- ) <long> $4E77 h, ;  aka rtr,
+: swap, ( dreg -- ) <long> 1arg d' <> invalid-error sreg $4840 + h, clean ;
+: stop,  ( n # -- ) <word> } # { <> invalid-error $4E72 h, w imm#,  clean ;
+: trap,  ( n # -- ) <long> } # { <> invalid-error 15 and $4E40 + h, clean ;
+: illegal,   ( -- ) <long> $4AFC h, clean ;
+: reset,     ( -- ) <long> $4E70 h, clean ;
+: nop,       ( -- ) <long> $4E71 h, clean ;
+: ireturn,   ( -- ) <long> $4E73 h, clean ;  aka rte,
+: return,    ( -- ) <long> $4E75 h, clean ;  aka rts,
+: trapv,     ( -- ) <long> $4E76 h, clean ;
+: ccreturn,  ( -- ) <long> $4E77 h, clean ;  aka rtr,
 
 : branch?, ( disp cc -- )
     $6000 +cc <word> swap ?shalf not disp-error
@@ -406,7 +411,7 @@ $A000 constant [[
 : repeat ( cc orig dest -- )         } again then { ;
 
 : do ( n reg -- reg dest )
-    1arg d' <> invalid-error swap 1- } # { third move, } begin { ;
+    1arg d' <> invalid-error swap 1- } # { third h move, } begin { ;
 : loop  ( reg dest -- ) displacement decbra, ;
 : loop? ( reg dest cc -- ) $100 xor >r displacement r> decbra?, ;
 
