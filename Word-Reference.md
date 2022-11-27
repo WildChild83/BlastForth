@@ -84,6 +84,14 @@ Copy the second-to-top Return Stack item to the Data Stack.
 `rthird` *( -- n1 ) ( R: n1 n2 n3 -- n1 n2 n3)*  "R third"  
 Copy the thirdmost Return Stack item to the Data Stack.
 
+## Comments
+
+`(` *( -- )*  "paren"  
+Begin a *block comment* that is terminated with a `)`.  Everything between `(` and `)` is ignored by compiler.  The `(` *must* have one or more whitespace characters immediatly following it.  If it is not followed by whitespace, as in `(emit)` for instance, then the `(` is understood to be part of a name and not a comment.
+
+`\` *( -- )*  "backslash"  
+Begin a *line comment*.  The compiler discards everything between `\` and the end of the line.  Like `(`, the `\` must be immediately followed by whitespace in order to be a comment.
+
 ## Arithmetic Operators
 
 `+` *( n1 n2 -- n' )*  "plus"  
