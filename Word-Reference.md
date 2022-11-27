@@ -279,7 +279,7 @@ Check *index* against *limit*.  If they are equal, drop them both and branch for
 
 `+loop` *( n -- ) ( R: limit index -- limit index' |  )*  "plus loop"  
 `-loop` *( n -- ) ( R: limit index -- limit index' |  )*  "minus loop"  
-Similar to `loop` except the step value *n* is added to or subtracted from *index* instead of incrementing *index* by 1.  `+loop` terminates the loop when *index* crosses the boundary between *limit* and *limit* minus 1, and `-loop` terminates when *index* crosses the boundary between *limit* and *limit* plus 1.  The use of negative step values is permitted, but not recommended because it obfuscates your code.
+Similar to `loop` except the step value *n* is added to or subtracted from *index* instead of incrementing *index* by 1.  `+loop` adds *n* to *index* and `-loop` subtracts *n* from *index*.  `+loop` terminates the loop when *index* crosses the boundary between *limit minus 1* and *limit*, and `-loop` terminates when *index* crosses the boundary between *limit plus 1* and *limit*.  The use of negative step values is permitted but not recommended because it tends to obfuscate the code.
 
 `unloop` *( R: limit index -- )*  
 Discard the loop parameters from the Return Stack.  You must always remember to `unloop` before `exit`ing a word when inside a `do..loop` structure.  If you forget, the machine will pull an invalid address from the Return Stack and behave badly!
@@ -293,9 +293,9 @@ Discard the loop parameters and branch forward to a corresponding `loop`, `+loop
 `/culminate` *( R: limit index -- limit index' )*  "slash culminate"  
 Similar to `leave` except these merely adjust the loop parameters so that the loop terminates at the end of the current iteration.  The current loop iteration continues and finishes normally.  Which version of `culminate` you should use depends on which version of `loop` you're in, and whether the step value is positive or negative.  Here are the rules:
 
-Use `culminate` with `loop`.
-If the step value is *positive*, use `+culminate` with `+loop` and `-culminate` with `-loop`.
-If the step value is *negative*, use `/culminate`.
+Use `culminate` with `loop`.  
+If the step value is *positive*, use `+culminate` with `+loop` and `-culminate` with `-loop`.  
+If the step value is *negative*, use `/culminate`.  
 
 
 
