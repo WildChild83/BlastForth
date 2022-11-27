@@ -233,5 +233,74 @@ Perform a 32-bit rightward rotation of N by U bit positions.
 `demux` *( n mask -- n1 n2 )*  "demux"  
 *De-multiplex* a number.  N2 is the logical "and" of N with the mask, and N1 is the "and" of N with the mask's inverse.
 
+## Flow Control
+
+`if` *( n -- )*  
+If *n* is non-zero, continue normal execution.  If *n* is zero, branch forward to a corresponding `else`, `then`, or `endif`.
+
+`else` *( -- )*  
+Branch forward to a corresponding `then` or `endif`.
+
+`then` *( -- )*  
+Resolve a forward branch and mark the end of a control structure.
+
+`endif` is a synonym for `then`.  
+Some programmers find `if..else..endif` to be more natural than `if..else..then`.
+
+`exit` *( -- )*  
+Terminate execution of the current word and return to the calling word.  Usually placed inside an `if..then` structure to perform a conditional exit.
+
+`ahead` *( -- )*  
+Branch forward to a corresponding `then`.  This word exists because it is compiled by `else`, but programmers rarely ever use it directly.
+
+`begin` *( -- )*  
+Mark the origin of a `begin..again`, `begin..until`, or `begin..while..repeat` structure.
+
+`again` *( -- )*  
+Branch backward to the corresponding `begin`.  A `begin..again` structure is an infinite loop.
+
+`until` *( n -- )*  
+If *n* is non-zero, leave the control structure and continue normal execution.  If *n* is zero, branch backward to the corresponding `begin`.
+
+`while` *( n -- )*  
+If *n* is non-zero, continue normal execution.  If *n* is zero, branch forward to a corresponding `repeat` and leave the control structure.
+
+`repeat` *( -- )*  
+Branch backward to the corresponding `begin`, skipping past the intermediate `while`.
+
+`do` *( limit index -- ) ( R: -- limit index )*  
+Move the loop parameters *limit* and *index* to the Return Stack, and mark the origin of a `do..loop` structure.
+
+`loop` *( R: limit index -- limit index' |  )*  
+Increment *index* by 1.  If *index* equals *limit*, drop the loop parameters from the Return Stack and continue normal execution.  If *index* hasn't reached *limit* yet, branch backward to the corresponding `do` or `?do`.
+
+`?do` *( limit index -- ) ( R: --  | limit index )*  "question do"  
+Check *index* against *limit*.  If they are equal, drop them both and branch forward to a corresponding `loop`, `+loop`, or `-loop`, skipping past the loop entirely.  Otherwise perform the function of `do`.  
+
+`+loop` *( n -- ) ( R: limit index -- limit index' |  )*  "plus loop"  
+`-loop` *( n -- ) ( R: limit index -- limit index' |  )*  "minus loop"  
+Similar to `loop` except the step value *n* is added to or subtracted from *index* instead of incrementing *index* by 1.  `+loop` terminates the loop when *index* crosses the boundary between *limit* and *limit* minus 1, and `-loop` terminates when *index* crosses the boundary between *limit* and *limit* plus 1.  The use of negative step values is permitted, but not recommended because it obfuscates your code.
+
+`unloop` *( R: limit index -- )*  
+Discard the loop parameters from the Return Stack.  You must always remember to `unloop` before `exit`ing a word when inside a `do..loop` structure.  If you forget, the machine will pull an invalid address from the Return Stack and behave badly!
+
+`leave` *( -- ) ( R: limit index -- )*  
+Discard the loop parameters and branch forward to a corresponding `loop`, `+loop`, or `-loop`, terminating the loop prematurely.  This is equivalent to factoring the `do..loop` into its own word definition and performing `unloop exit`.
+
+ `culminate` *( R: limit index -- limit index' )*  "culminate"  
+`+culminate` *( R: limit index -- limit index' )*  "plus culminate"  
+`-culminate` *( R: limit index -- limit index' )*  "minus culminate"  
+`/culminate` *( R: limit index -- limit index' )*  "slash culminate"  
+Similar to `leave` except these merely adjust the loop parameters so that the loop terminates at the end of the current iteration.  The current loop iteration continues and finishes normally.  Which version of `culminate` you should use depends on which version of `loop` you're in, and whether the step value is positive or negative.  Here are the rules:
+
+Use `culminate` with `loop`.
+If the step value is *positive*, use `+culminate` with `+loop` and `-culminate` with `-loop`.
+If the step value is *negative*, use `/culminate`.
+
+
+
+
+
+
 
 
