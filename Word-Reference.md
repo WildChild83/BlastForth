@@ -244,11 +244,11 @@ Branch forward to a corresponding `then` or `endif`.
 `then` *( -- )*  
 Resolve a forward branch and mark the end of a control structure.
 
-`endif` is a synonym for `then`.  
+`endif` is a synonym for `then`  
 Some programmers find `if..else..endif` to be more natural than `if..else..then`.
 
 `exit` *( -- )*  
-Terminate execution of the current word and return to the calling word.  Usually placed inside an `if..then` structure to perform a conditional exit.
+Terminate execution of the current word and return to the calling word.  The address to return to is at the top of the Return Stack.  Usually placed inside an `if..then` structure to perform a conditional exit.
 
 `ahead` *( -- )*  
 Branch forward to a corresponding `then`.  This word exists because it is compiled by `else`, but programmers rarely ever use it directly.
@@ -279,10 +279,10 @@ Check *index* against *limit*.  If they are equal, drop them both and branch for
 
 `+loop` *( n -- ) ( R: limit index -- limit index' |  )*  "plus loop"  
 `-loop` *( n -- ) ( R: limit index -- limit index' |  )*  "minus loop"  
-Similar to `loop` except the step value *n* is added to or subtracted from *index* instead of incrementing *index* by 1.  `+loop` adds *n* to *index* and `-loop` subtracts *n* from *index*.  `+loop` terminates the loop when *index* crosses the boundary between *limit minus 1* and *limit*, and `-loop` terminates when *index* crosses the boundary between *limit plus 1* and *limit*.  The use of negative step values is permitted but not recommended because it tends to obfuscate the code.
+Similar to `loop` except the step value *n* is added to or subtracted from *index* instead of incrementing *index* by 1.  `+loop` adds *n* to *index* and `-loop` subtracts *n* from *index*.  `+loop` terminates the loop when *index* crosses the boundary between *limit minus 1* and *limit*, and `-loop` terminates when *index* crosses the boundary between *limit plus 1* and *limit*.  The use of negative step values is permitted but not recommended because it tends to make the program difficult to follow.
 
 `unloop` *( R: limit index -- )*  
-Discard the loop parameters from the Return Stack.  You must always remember to `unloop` before `exit`ing a word when inside a `do..loop` structure.  If you forget, the machine will pull an invalid address from the Return Stack and behave badly!
+Discard the loop parameters from the Return Stack.  You must always remember to `unloop` before `exit`ing a word from inside a `do..loop`.  If you forget, the machine will pull an invalid address from the Return Stack and behave badly!
 
 `leave` *( -- ) ( R: limit index -- )*  
 Discard the loop parameters and branch forward to a corresponding `loop`, `+loop`, or `-loop`, terminating the loop prematurely.  This is equivalent to factoring the `do..loop` into its own word definition and performing `unloop exit`.
@@ -291,7 +291,7 @@ Discard the loop parameters and branch forward to a corresponding `loop`, `+loop
 `+culminate` *( R: limit index -- limit index' )*  "plus culminate"  
 `-culminate` *( R: limit index -- limit index' )*  "minus culminate"  
 `/culminate` *( R: limit index -- limit index' )*  "slash culminate"  
-Similar to `leave` except these merely adjust the loop parameters so that the loop terminates at the end of the current iteration.  The current loop iteration continues and finishes normally.  Which version of `culminate` you should use depends on which version of `loop` you're in, and whether the step value is positive or negative.  Here are the rules:
+Similar to `leave` except these merely adjust the loop parameters so that the loop terminates at the end of the current iteration.  The current loop iteration continues and finishes normally.  Which version of `culminate` you should use depends on which version of `loop` you're in, and whether the step value is positive or negative:
 
 Use `culminate` with `loop`.  
 If the step value is *positive*, use `+culminate` with `+loop` and `-culminate` with `-loop`.  
