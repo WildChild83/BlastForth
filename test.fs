@@ -1,25 +1,13 @@
 include system.fs
 Forth definitions
 
-: maybethrow ( -- )
-    cr ." will I throw?"
-    0 throw
-    cr ." didn't throw"
-;
-
 :entry
-
     ['] (emit) is emit
-
-    ." hello world!"
+    cr ." hello world!"
     
-    ['] maybethrow catch cr ." throw code: " <# #s #> type
-    
-    cr ." top of ram: " $FFFFFC @ hex.
-    cr ." middle:     " $FF8000 @ hex.
+    cr ." write some numbers: " 12345 <# #s #> type space  $ABCDE hex.
     
     cr ." halting cpu..."
-    
     begin again ;
 
 romfile: test.gen
