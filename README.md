@@ -30,7 +30,7 @@ Words enclosed in parentheses `( )`, such as `(init-video-config)`, are for inte
 
 Words that end with an `&` (ampersand) return a *code field* containing raw machine instructions.  Examples include `docolon&`, `doconst&`, and `next&`.
 
-Words enclosed in `< >` (angle brackets) are the default implementation of a Deferred Word, such as `<emit>`.  They need to be initialized at program start, i.e. `<emit> is emit`.
+Words enclosed in `< >` (angle brackets) are the default implementation of a Deferred Word, such as `<emit>`.  They need to be initialized at program start, i.e. `['] <emit> is emit`.
 
 Words defined with `value` or `2value` do not have an initial value.  Like all memory words, they must be explicitly given a value at program start.
 
