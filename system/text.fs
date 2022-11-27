@@ -89,7 +89,7 @@ create glyph-data  bytes[
 (       Load Text to Video Memory                                              )
 ( ---------------------------------------------------------------------------- )
 rawcode (init-glyph) \ A1=vdp data, A2=glyph data
-    7 d5 do [a2]+ d1 b move, 8 d4 do 1 # d1 b rol, 1 # d1 bittest, d2 z<> set?,
+    7 d5 do [a2]+ d1 b move, 8 d4 do 1 # d1 b rol, 0 # d1 bittest, d2 z<> set?,
     tos d2 b and, 4 # d3 lsl, d2 d3 b or, loop d3 [a1] move, loop return, end
 
 code (init-text) ( color -- )
@@ -139,7 +139,9 @@ hvalue terminal
 
 : cr ( -- ) 0 to tx  ty 1+ 28 hmod to ty ;
 
-: emit ( c -- )
+defer emit
+
+: (emit) ( c -- )
     attributes +  terminal ty 7 lshift + tx 2* + write-vram  h>vdp 1 +to tx ;
 
 : type ( addr u -- ) 0 ?do count emit loop drop ;
@@ -164,7 +166,32 @@ code (.") ( -- )
 { : ." ( "text" -- ) comp-only [char] " parse (.") cstring, alignrom ; }
 
 ( ---------------------------------------------------------------------------- )
+(       Number Words                                                           )
 ( ---------------------------------------------------------------------------- )
+variable base       40 allot variable (numbuffer)
+
+code decimal  10 # base [#] move, next
+code hex      16 # base [#] move, next
+
+code <# ( -- )
+    (numbuffer) [#] a1 lea, a1 [a1] move, next       aka <##
+code sign ( n -- )
+    tos test, neg if (numbuffer) [#] a1 lea, [a1] a2 move, a2 dec,
+    47 # [a2] c move, a2 [a1] move, endif tos pop, next
+code hold ( c -- )
+    (numbuffer) [#] a1 lea, [a1] a2 move, a2 dec,
+    tos [a2] c move, a2 [a1] move, tos pop, next
+code #> ( n -- addr u )
+    (numbuffer) [#] a1 lea, [a1] d1 move,
+    d1 push, a1 tos move, d1 tos sub, next
+code ##> ( d -- addr u ) cell # sp add, ^ #> displacement branch, end
+
+: # ( n -- n' ) base @ uh/mod swap 1+ hold ;
+: #s ( n -- 0 ) begin # dup 0= until ;
+
+: hex. ( u -- )
+    <# begin dup 15 and 1+ hold 4 rshift dup 0= until 40 hold #> type space ;
+
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

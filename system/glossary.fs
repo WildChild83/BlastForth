@@ -81,6 +81,9 @@ forth-wordlist
 : synonym ( "newname" "oldname" ) parse-name  nextname  ' alias ;
 : aka     ( "newname" )           lastxt alias ;
 
+:  warnings  warnings on  ;
+: -warnings  warnings off ;
+
 ( ---------------------------------------------------------------------------- )
 Host    : { ( -- ) host-wordlist >order ;   immediate
 
@@ -131,8 +134,8 @@ synonym flag 0<>     synonym not 0=
 : kilobytes ( n -- n' ) 10 lshift ;
 : megabytes ( n -- n' ) 20 lshift ;
 
-: .n ( n n' -- )
-    ." ." >r s>d <# #s #> r@ min r> over - 0 max 0 ?do ." 0" loop type space ;
+: (.n) ( addr u n' -- ) tuck min tuck - 0 max ." ." 0 ?do ." 0" loop type ;
+:  .n  ( n n' -- ) >r ?dup if s>d <# #s #> r> (.n) else rdrop endif space ;
 : .megabytes ( n -- )
     1 megabytes /mod 0 .r   100000 $100000 */ 2 .n   ." Megabytes " ;
 : .kilobytes ( n -- )

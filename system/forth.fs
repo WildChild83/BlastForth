@@ -12,13 +12,6 @@
 (           - 68k.fs                                                           )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
-
-( ---------------------------------------------------------------------------- )
-(                                                                              )
-(       TODO:                                                                  )
-(           - fix Values so they work in upper 32kb                            )
-(                                                                              )
-( ---------------------------------------------------------------------------- )
 Forth definitions
 
 { create state   false host, }
@@ -56,13 +49,16 @@ Forth definitions
 ( ---------------------------------------------------------------------------- )
 (       Literals                                                               )
 ( ---------------------------------------------------------------------------- )
-{ : ?ph ( n -- n flag ) dup  0 65536 within ; }
-{ : ?nh ( n -- n flag ) dup -65536 0 within ; }
+{ : ?zero ( n -- n flag ) dup  0= ; }
+{ : ?ph   ( n -- n flag ) dup  0 65536 within ; }
+{ : ?nh   ( n -- n flag ) dup -65536 0 within ; }
 
 code lit   ( -- n ) tos push, tos read, next
+code zlit  ( -- 0 ) tos push, tos clear, next
 code plit  ( -- u ) tos push, tos clear, tos h read, next
 code nlit  ( -- n ) tos push, -1 # tos move, tos h read, next
 code 2lit  ( -- d ) tos push, [tp]+ -[sp] move, tos read, next
+code 2zlit ( -- d ) tos push, tos clear, tos push, next
 code 2plit ( -- u u )
     tos push, [tp]+ -[sp] h move, -[sp] h clear, tos clear, tos h read, next
 code 2nlit ( -- n n )
@@ -70,12 +66,16 @@ code 2nlit ( -- n n )
     -1 # tos move, tos h read, next
 
 { : literal  ( n -- ) comp-only
+    ?zero if zlit drop exit endif
     ?ph if plit h, exit endif ?nh if nlit h, exit endif lit , ; }
 { : (2lit)   ( n n -- ) comp-only 2lit , , ; }
 { : 2literal ( n n -- ) comp-only
-    ?ph if swap ?ph if 2plit h, h, exit endif (2lit) exit endif
-    ?nh if swap ?nh if 2nlit h, h, exit endif (2lit) exit endif
+    ?zero if swap ?zero if 2zlit 2drop exit endif  swap  endif
+    ?ph   if swap ?ph   if 2plit h, h, exit endif (2lit) exit endif
+    ?nh   if swap ?nh   if 2nlit h, h, exit endif (2lit) exit endif
     swap (2lit) ; }
+
+{ : ['] ( "name" -- xt ) comp-only ' >body @ } literal { ; }
 
 ( ---------------------------------------------------------------------------- )
 (       Created Words                                                          )
@@ -181,7 +181,7 @@ create do2const&   asm tos push, [dfa]+ push, [dfa] tos move, next
 { : alignram ( -- ) ramspace @ 1+ -2 and ramspace ! ; }
 { : <memory>  @ compiling? if , exit endif 4 + romh@ $FF0000 + ; }
 
-create domem&   asm tos push, $FF0000 # tos move, [dfa] tos h move, next
+create domem&   asm tos push, -1 # tos move, [dfa] tos h move, next
 { : buffer: ( u "name" -- ) host-only 
     create domem& codefield, +ramspace> h, does> <memory> ; }
 
@@ -197,48 +197,46 @@ create domem&   asm tos push, $FF0000 # tos move, [dfa] tos h move, next
 { : +to ( n "name" -- ) comp-only ' >body dup 2 cells + @ ,  @ 4 + romh@ h, ; }
 
 ( ---------------------------------------------------------------------------- )
-\ FIXME: Values in upper 32kb of RAM won't work
-
 create dovalue&   asm
-    tos push, $FF0000 [#] a1 lea, [dfa] a1 h add, [a1] tos move, next
+    tos push, -1 # d1 move, [dfa] d1 h move, d1 a1 move, [a1] tos move, next
 create tovalue&   doprim, asm
-    $FF0000 [#] a1 lea, [tp]+ a1 h add, tos [a1] move, tos pop, next
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] move, tos pop, next
 create +tovalue&  doprim,  asm
-    $FF0000 [#] a1 lea, [tp]+ a1 h add, tos [a1] add, tos pop, next
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] add, tos pop, next
 { : value ( "name" -- ) host-only 
     create dovalue& codefield, tovalue& host, +tovalue& host,
     alignram 4 +ramspace> h, does> <memory> ; }
 
 create dohvalue&   asm
-    tos push, $FF0000 [#] a1 lea, [dfa] a1 h add,
+    tos push, -1 # d1 move, [dfa] d1 h move, d1 a1 move,
     tos clear, [a1] tos h move, next
 create tohvalue&   doprim, asm
-    $FF0000 [#] a1 lea, [tp]+ a1 h add, tos [a1] h move, tos pop, next
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] h move, tos pop, next
 create +tohvalue&  doprim, asm
-    $FF0000 [#] a1 lea, [tp]+ a1 h add, tos [a1] h add, tos pop, next
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] h add, tos pop, next
 { : hvalue ( "name" -- ) host-only 
     create dohvalue& codefield, tohvalue& host, +tohvalue& host,
     alignram 2 +ramspace> h, does> <memory> ; }
 
 create docvalue&   asm
-    tos push, $FF0000 [#] a1 lea, [dfa] a1 h add, 
+    tos push, -1 # d1 move, [dfa] d1 h move, d1 a1 move,
     tos clear, [a1] tos c move, next
 create tocvalue&   doprim, asm
-    $FF0000 [#] a1 lea, [tp]+ a1 h add, tos [a1] c move, tos pop, next
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] c move, tos pop, next
 create +tocvalue&  doprim, asm
-    $FF0000 [#] a1 lea, [tp]+ a1 h add, tos [a1] c add, tos pop, next
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] c add, tos pop, next
 { : cvalue ( "name" -- ) host-only 
     create docvalue& codefield, tocvalue& host, +tocvalue& host,
     1 +ramspace> h, does> <memory> ; }
 
 create do2value&   asm
-    tos push, $FF0000 [#] a1 lea, [dfa] a1 h add,
-    tos clear, [a1]+ tos move, [a1]+ push, next
+    tos push, -1 # d1 move, [dfa] d1 h move, d1 a1 move,
+    tos clear, [a1]+ tos move, [a1]+ -[sp] move, next
 create to2value&   doprim, asm
-    $FF0000 [#] a1 lea, [tp]+ a1 h add,
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move,
     tos [a1]+ move, [sp]+ [a1] move, tos pop, next
 create +to2value&  doprim, asm
-    $FF0000 [#] a1 lea, [tp]+ a1 h add, [a1]+ d2 move, [a1] d1 move,
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, [a1]+ d2 move, [a1] d1 move,
     [sp]+ d1 add, tos d2 addx, d1 [a1] move, d2 -[a1] move, tos pop, next
 { : 2value ( "name" -- ) host-only 
     create do2value& codefield, to2value& host, +to2value& host,
@@ -248,22 +246,25 @@ create +to2value&  doprim, asm
 (       Deferred Words                                                         )
 ( ---------------------------------------------------------------------------- )
 create dodefer&   asm
-    $FF0000 # d1 move, [dfa] d1 h move,
-    d1 dfa move, [dfa]+ a1 move, [a1] jump, end
+    -1 # d1 move, [dfa] d1 h move, d1 a1 move,
+    [a1] dfa move, [dfa]+ a1 move, [a1] jump, end
 { : defer ( "name" -- ) host-only 
     create dodefer& codefield, 4 +ramspace> h, does> <memory> ; }
 
 code defer@ ( xt1 -- xt2 )
-    tos a1 move, 4 # a1 add, $FF0000 [#] a2 lea,
-    [a1] a2 h add, [a2] tos move, next
-{ : action-of ( "name" -- xt ) comp-only
-    parse-name  find-name  name>interpret >body @ } literal { defer@ ; }
-
+    tos a1 move, 4 # a1 add, -1 # d1 move,
+    [a1] d1 h move, d1 a1 move, [a1] tos move, next
 code defer! ( xt1 xt2 -- )
-    tos a1 move, 4 # a1 add, $FF0000 [#] a2 lea,
-    [a1] a2 h add, [a2] pop, tos pop, next
-{ : is ( xt "name" -- ) comp-only
-    parse-name  find-name  name>interpret >body @ } literal { defer! ; }
+    tos a1 move, 4 # a1 add, -1 # d1 move,
+    [a1] d1 h move, d1 a1 move, [sp]+ [a1] move, tos pop, next
+
+code (action-of) ( -- xt )
+    -1 # d1 move, d1 h read, d1 a1 move, tos push, [a1] tos move, next
+code (is) ( xt -- )
+    -1 # d1 move, d1 h read, d1 a1 move, tos [a1] move, tos pop, next
+
+{ : action-of ( "name" -- xt ) comp-only (action-of) ' >body @ 4 + romh@ h, ; }
+{ : is        ( xt "name" -- ) comp-only (is)        ' >body @ 4 + romh@ h, ; }
 
 ( ---------------------------------------------------------------------------- )
 (       Data Lists                                                             )

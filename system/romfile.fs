@@ -15,6 +15,8 @@ Host definitions
 variable rom        SizeOfROM allocate throw  rom !
 variable rom*       rom @ rom* !
 
+Verbose [IF] SizeOfROM .bytes .( allocated for ROM file.) [THEN]
+
 : >1< ( n -- c ) $FF and ;
 : >2< ( n -- u ) dup  8 rshift >1< swap >1<  8 lshift or ;
 : >4< ( n -- u ) dup 16 rshift >2< swap >2< 16 lshift or ;
@@ -47,14 +49,18 @@ Forth definitions {
 
 Host definitions
 : freerom ( -- )
-    romstats   rom @ free throw   rom off rom* off
-    cr depth if .s cr endif   bye ;
+    rom @ free throw   rom off rom* off
+    cr depth if ." Stack Leak!!  " .s cr endif   bye ;
 
 Forth definitions {
 : printrom ( -- ) rom* @ rom @ 512 + ?do i c@ hex. loop cr freerom ;
 : romfile  ( addr u -- )
-    2dup type ." , "   w/o bin create-file throw >r
-    rom @ rom* @ over - r@ write-file throw   r> close-file throw   freerom ;
+    cr 2dup Verbose IF ." Program size: " ELSE type ." , " THEN romstats
+    w/o bin create-file throw >r
+        rom @ rom* @ over - r@ write-file throw
+        r> close-file throw
+    Verbose IF cr ." ROM file: " type ." , " SizeOfROM .bytes THEN
+    freerom ;
 : romfile: ( "name" -- ) parse-name romfile ;
 : romfile" ( "name" -- ) [char] " parse romfile ;
 

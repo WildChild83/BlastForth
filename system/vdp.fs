@@ -50,11 +50,11 @@ code !video-config
 (       "Immediate" Video Registers
 ( ---------------------------------------------------------------------------- )
 code +video ( -- )
-    vdp-buffer 1+ [#] a1 lea, $8100 # d1 h move, [a1] d1 c move,
+    vdp-buffer 1+ [#] a1 lea, $8104 # d1 h move, [a1] d1 c move,
     $40 # d1 c or, d1 [a1] c move, d1 vdp-ctrl [#] h move, next
 
 code -video ( -- )
-    vdp-buffer 1+ [#] a1 lea, $8100 # d1 h move, [a1] d1 c move,
+    vdp-buffer 1+ [#] a1 lea, $8104 # d1 h move, [a1] d1 c move,
     $BF # d1 c and, d1 [a1] c move, d1 vdp-ctrl [#] h move, next
 
 code autoinc ( value -- )
@@ -149,11 +149,11 @@ code hvdp> ( -- h ) tos push, tos clear, vdp-data [#] tos h move, next
 
 code write ( addr  #halves -- )
     vdp-data [#] a1 lea, a2 pop,
-    1 # tos bittest, z<> if tos dec, [a2]+ [a1] h move, endif
+    0 # tos bittest, z<> if tos dec, [a2]+ [a1] h move, endif
     1 # tos h lsr, tos h dec, tos begin [a2]+ [a1] move, loop tos pop, next
 code read ( addr  #halves -- )
     vdp-data [#] a1 lea, a2 pop,
-    1 # tos bittest, z<> if tos dec, [a1] [a2]+ h move, endif
+    0 # tos bittest, z<> if tos dec, [a1] [a2]+ h move, endif
     1 # tos h lsr, tos h dec, tos begin [a1] [a2]+ move, loop tos pop, next
 
 : store-video   ( src dest  #halves -- ) 2autoinc swap write-vram  write ;

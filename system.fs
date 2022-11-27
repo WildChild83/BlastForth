@@ -10,20 +10,24 @@ include system/glossary.fs
 ( ---------------------------------------------------------------------------- )
 Forth definitions {
 
-\ Rom output file size.  Default is 1MB, max supported is 4MB.  
+\ Rom output file size.  Max supported size is 4 megabytes.
+\   This number can also be specified in "kilobytes" or "bytes".
 1 megabytes constant SizeOfROM
 
-\ If DEBUG=true then Rom file includes extra sanity checks and error reporting
-\    (and a larger file size).  Set to false for "release version."
+\ If DEBUG=true then program includes extra checks and error reporting
+\   (and larger, slower code).  Set to false for "release version."
 true constant DEBUG
 
-\ The Data Stack, Return Stack, and Float Stack (if used) will each occupy
-\    "StackSize" bytes in RAM.  Must be a multiple of 4.
-128 bytes constant StackSize
+\ Verbose directs the compiler to print detailed information.
+true constant Verbose
 
 \ If FloatStack=true, the program will be built with floating-point support,
-\    including a dedicated stack for floating-point numbers.
+\   including a dedicated stack for floating-point numbers.
 false constant FloatStack
+
+\ The Data Stack, Return Stack, and Float Stack (if used) will each occupy
+\   "StackSize" bytes in RAM.  Must be a multiple of 4.
+128 bytes constant StackSize
 
 ( ---------------------------------------------------------------------------- )
 include system/romfile.fs
@@ -55,8 +59,8 @@ Forth definitions
 ( Countries )    ascii" JUE             "
 
 ( ---------------------------------------------------------------------------- )
-\ Warn if header is the wrong size [comment this line to disable the warning]
-romspace { 512 bytes <> } [if] .( Incorrect Sega ROM Header. ) [then]
+\ Warn if header is the wrong size (comment this line to disable the warning)
+romspace { 512 bytes <> } [IF] .( Incorrect Sega ROM Header. ) [THEN]
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
@@ -88,20 +92,20 @@ create next&  asm
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
-FloatStack [if]
+FloatStack [IF]
     \ If you're using floats then uncomment one and ONLY one of the following:
     include system/floatstack/float16.fs   \ 17-bit mantissa, 16-bit exponent
     \ include system/floatstack/float32.fs   \ 33-bit mantissa, 32-bit exponent
     \ include system/floatstack/ieee32.fs    \ 24-bit mantissa,  8-bit exponent
     \ include system/floatstack/ieee64.fs    \ 48-bit mantissa, 16-bit exponent
 
-[else]
+[ELSE]
     \ If we're not going to use a floating-point stack then make
     \    'A4' available as a CPU register mnemonic
     Assembler68k definitions
     synonym  a4  fp         synonym [a4] [fp]       synonym  [a4]+ [fp]+
     synonym [a4 [fp         synonym  a4+  fp+       synonym -[a4] -[fp]
-[then]
+[THEN]
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
@@ -130,7 +134,7 @@ include system/interrupts.fs    \ vertical and horizontal blank handlers
 Forth definitions
 
 : init-video ( -- )
-    (init-video-config)     2 autoinc 
+    (init-video-config)       2autoinc 
     $C000 planeA        $B800 spritePlane       +h320 +v224 +ntsc
     $E000 planeB        $BC00 hScrollTable      64x64planes
     $B000 windowPlane     255 hbi-counter       !video-config ;
@@ -146,10 +150,15 @@ create default-palette
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
+\ user code entry point
+create (:entry) 0 ,
+{ : :entry   host-only  PC (:entry) rom!  docolon& , } ] { ; }
+
+\ system entry point
 68k-start: asm
 
-    \ disable interrupts
-    $2700 # sr move,
+    \ disable CPU interrupts, disable display
+    $2700 # sr move,  $80048104 # vdp-ctrl [#] move,
     
     \ Trademark Security System check
     $A10008 [#] test, z= if
@@ -157,22 +166,33 @@ Forth definitions
             $A10001 [#] d1 b move, $F # d1 b and, z<> if
                 $53454741 # $A14000 [#] move,
     endif endif endif
-
-    \ allot stack RAM
-    alignram StackSize allot here # rp move,
-             StackSize allot here # sp move,
-    FloatStack [if] StackSize allot here # fp move, [then]
     
+    \ clear System RAM and CPU registers
+    rp clear, $deadce11 # d1 move, 64 kilobytes cell/ d2 do d1 rpush, loop
+    [rp]+ [[ d1 d2 d3 d4 d5 d6 d7 tos a1 a2 a3 fp tp sp rp np ]] movem,
+
+    \ initialize stack pointers
+    alignram        StackSize allot here # rp move,
+                    StackSize allot here # sp move,
+    FloatStack [IF] StackSize allot here # fp move, [THEN]
+
     \ launch threading mechanism, transition to Forth code execution
     next& # np move,  $4BFA0004 , next ]
+
+    init-exceptions
+
+    \ load sound driver
+    \ ...
 
     \ set up video hardware
     init-video    default-palette $00 16 store-color
     15 init-text  planeA> to terminal page   0 to attributes
     +video
+    
+    decimal
 
-    \ user code entry point
-    [ PC: (:entry) 0 , { : :entry PC (:entry) rom! docolon& , } ] { ; } ]
+    \ call user's entry point, catching any thrown exceptions
+    (:entry) @ catch
     
     \ hang the system if :entry returns...
     begin again ;

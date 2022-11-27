@@ -15,10 +15,7 @@
 (           - more testing                                                     )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
-Forth definitions
-Glossary Assembler68k definitions
-
-{
+Forth definitions       Glossary Assembler68k definitions {
 
 ( ---------------------------------------------------------------------------- )
 (       Errors                                                                 )
@@ -316,10 +313,11 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
 
 : ext, ( reg ) nobyte 1arg d' <> invalid-error sreg $4880 + (ugh) h, clean ;
 
-: clear, ( mem -- )
+: clear, ( arg -- )
     1arg case
         d' of opsize @ 4 =
               if dreg $7000 else sreg $4200 opsize+ endif + h, endof
+        a' of nobyte dreg $3040 + 0 swap h imm, endof
         m' of drop $4200 ea, endof
     invalid endcase clean ;  aka clr,
 

@@ -152,6 +152,11 @@ code h/         d1 pop, tos d1 divs, d1 tos h move, tos ext, next
 code hmod       d1 pop, tos d1 divs, d1 swap, d1 tos h move, tos ext, next
 code h/mod      d1 pop, tos d1 divs, d1 tos h move, tos ext,
                 d1 swap, d1 ext, d1 push, next
+code uh*        2 # sp add, [sp]+ tos h mulu, next
+code uh/        d1 pop, tos d1 divu, tos clear, d1 tos h move, next
+code uhmod      d1 pop, tos d1 divs, d1 swap, tos clear, d1 tos h move, next
+code uh/mod     d1 pop, tos d1 divs, tos clear, d1 tos h move,
+                d1 h clear, d1 swap, d1 push, next
 
 code arshift    d1 pop, tos d1   asr, d1 tos move, next
 code lrotate    d1 pop, tos d1   rol, d1 tos move, next
@@ -190,8 +195,10 @@ code under-   tos [sp cell +] sub, tos pop, next
 
 code  branch    [tp]+ tp h add, next
 code 0branch    d1 h read, tos test, z= if d1 tp h add, endif tos pop, next
+code ?branch    d1 h read, tos test, z= if d1 tp h add, tos pop, endif next
 
-{ : if    ( -- orig ) comp-only 0branch (orig) ; }
+{ :  if   ( -- orig ) comp-only 0branch (orig) ; }
+{ : ?if   ( -- orig ) comp-only ?branch (orig) ; }
 { : ahead ( -- orig ) comp-only  branch (orig) ; }
 { : then  ( orig -- ) comp-only (orig>) ; }         aka endif
 
@@ -202,6 +209,18 @@ code 0branch    d1 h read, tos test, z= if d1 tp h add, endif tos pop, next
 { : else  ( orig1 -- orig2 )     comp-only  branch  (orig)  swap  (orig>) ; }
 { : while  ( dest -- orig dest ) comp-only 0branch  (orig)  swap   ; }
 { : repeat ( orig dest -- )      comp-only  branch (>dest) (orig>) ; }
+
+( ---------------------------------------------------------------------------- )
+code (of)       d1 h read, d2 pop, d2 tos comp,
+                z<> if d1 tp h add, d2 tos move, next, endif tos pop, next
+code (of?)      d1 h read, tos test, z= if d1 tp h add, tos pop, next, endif 
+                4 # sp add, tos pop, next
+
+{ : case        comp-only 0 ; }
+{ : of          comp-only (of)  (orig) ; }
+{ : of?         comp-only (of?) (orig) ; }
+{ : endof       comp-only >r >r branch (orig) r> 1+ r> (orig>) ; }
+{ : endcase     comp-only } drop { 0 ?do (orig>) loop ; }
 
 ( ---------------------------------------------------------------------------- )
 code   (do)     [sp]+ -[rp] move, tos rpush, tos pop, next
@@ -223,6 +242,25 @@ code (-loop)    d1 h read, d2 rpop, d3 rpeek, d2 d3 comp, d4 neg set?,
 { :  loop ( orig dest -- ) comp-only  (loop) (>dest) (orig>) ; }
 { : +loop ( orig dest -- ) comp-only (+loop) (>dest) (orig>) ; }
 { : -loop ( orig dest -- ) comp-only (-loop) (>dest) (orig>) ; }
+
+( ---------------------------------------------------------------------------- )
+(       Exceptions                                                             )
+( ---------------------------------------------------------------------------- )
+alignram 8 cells allot hvariable (estack)
+
+: init-exceptions ( -- ) [ (estack) $FFFF and ]L (estack) h! ;
+
+code (epush) ( -- )
+    (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
+    rp -[a1] h move, sp -[a1] h move, a1 [a3] h move, next
+code (epop) ( -- )
+    (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
+    [a1]+ d1 h move, d1 sp move, [a1]+ d1 h move, d1 rp move,
+    a1 [a3] h move, next
+code (edrop) ( -- ) (estack) [#] a3 lea, cell # [a3] h add, next
+
+: catch ( xt -- ) (epush) execute (edrop) 0 ;
+: throw  ( n -- ) ?if (epop) endif ;
 
 ( ---------------------------------------------------------------------------- )
 (       Other Words                                                            )
