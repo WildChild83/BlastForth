@@ -282,7 +282,7 @@ Check *index* against *limit*.  If they are equal, drop them both and branch for
 Similar to `loop` except the step value *n* is added to or subtracted from *index* instead of incrementing *index* by 1.  `+loop` adds *n* to *index* and `-loop` subtracts *n* from *index*.  `+loop` terminates the loop when *index* crosses the boundary between *limit minus 1* and *limit*, and `-loop` terminates when *index* crosses the boundary between *limit plus 1* and *limit*.  The use of negative step values is permitted but not recommended because it tends to make the program difficult to follow.
 
 `unloop` *( R: limit index -- )*  
-Discard the loop parameters from the Return Stack.  You must always remember to `unloop` before `exit`ing a word from inside a `do..loop`.  If you forget, the machine will pull an invalid address from the Return Stack and behave badly!
+Discard the loop parameters from the Return Stack.  You must always remember to `unloop` before `exit`ing a word from inside a `do..loop`.  If you forget then the machine will interpret the *index* parameter as a return address and behave badly!
 
 `leave` *( -- ) ( R: limit index -- )*  
 Discard the loop parameters and branch forward to a corresponding `loop`, `+loop`, or `-loop`, terminating the loop prematurely.  This is equivalent to factoring the `do..loop` into its own word definition and performing `unloop exit`.
