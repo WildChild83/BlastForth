@@ -291,16 +291,27 @@ Discard the loop parameters and branch forward to a corresponding `loop`, `+loop
 `+culminate` *( R: limit index -- limit index' )*  "plus culminate"  
 `-culminate` *( R: limit index -- limit index' )*  "minus culminate"  
 `/culminate` *( R: limit index -- limit index' )*  "slash culminate"  
-Similar to `leave` except these merely adjust the loop parameters so that the loop terminates at the end of the current iteration.  The current loop iteration continues and finishes normally.  Which version of `culminate` you should use depends on which version of `loop` you're in, and whether the step value is positive or negative:
+Similar to `leave` except these merely adjust the loop parameters so that the loop terminates at the end of the current iteration.  The current loop iteration continues and finishes normally.  Which version of `culminate` you should use depends on which version of `loop` you're in, and whether the step value is positive or negative.  Here are the guidelines:
 
 Use `culminate` with `loop`.  
 If the step value is *positive*, use `+culminate` with `+loop` and `-culminate` with `-loop`.  
 If the step value is *negative*, use `/culminate`.  
 
+## Defining Words
 
+Aka "words that create new words."  All the words in this section parse the next token from the input buffer and create a new word with that token as its name.  This is annotated with *"name"* in the Defining Word's stack comment.
 
+`create` *( "name" -- )*  "create"  
+*Create* a new word named *"name"* and place its code field in ROM at the current position of the ROMspace pointer.  When invoked, the new word pushes its ROM address onto the Data Stack, allowing software to access whatever data is at that position in ROM.  This region of data is called the *data field* of the Created word.  The "type" of the data depends on how the Created word is used.  All other Defining Words implicitly invoke `create`.
 
+`:` *( "name" -- )*  "colon"  
+Create a new *colon definition* and switch the environment to *compilation state*.  Compile each subsequent word into the *data field* of the new colon definition, until a `;` (semicolon) is encountered.  Once compiled, the new word can be executed analogously to a "subroutine" call.
 
+`;` *( -- )*  "semicolon"  
+Finalize the currently-compiling colon definition, and switch the environment back to *interpretation state*.
+
+`constant` *( n "name" -- )*  "constant"  
+Create a new *constant* and place *n* in the constant's data field.  When invoked, the new word pushes *n* onto the Data Stack.
 
 
 
