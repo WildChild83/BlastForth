@@ -360,7 +360,7 @@ Create a new *constant* and place *n* in the constant's data field.  When invoke
 `... speed @ max-speed > if max-speed  speed ! endif ...`  
 
 `buffer:` *( u "name" -- )*  "buffer colon"  
-Create a new *RAM buffer*.  Place the current value of the RAMspace pointer into the buffer's *data field* and advance the pointer by *n* bytes.  When invoked, the buffer will push it's RAM address onto the stack for software to access (i.e. with `@` (fetch) or `!` store)).  All Defining Words that allot space in RAM implicitly invoke `buffer:`.
+Create a new *RAM buffer*.  Place the current value of the RAMspace pointer into the buffer's *data field* and advance the pointer by *n* bytes.  When invoked, the buffer will push it's RAM address onto the stack for software to access, i.e. with `@` (fetch) or `!` (store).  All Defining Words that allot space in RAM implicitly invoke `buffer:`.
 
 `variable` *( "name" -- )*  "variable"  
 Create a new user variable.  A `variable` is a `buffer:` with one cell (4 bytes) allotted to it.
