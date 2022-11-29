@@ -297,21 +297,48 @@ Use `culminate` with `loop`.
 If the step value is *positive*, use `+culminate` with `+loop` and `-culminate` with `-loop`.  
 If the step value is *negative*, use `/culminate`.  
 
+## Memory Access
+
+`@` *( addr -- n )*  "fetch"  
+`h@` *( addr -- h )*  "H fetch"  
+`c@` *( addr -- c )*  "C fetch"  
+`2@` *( addr -- dlo dhi )*  "two fetch"  
+
+
 ## Defining Words
 
 Aka "words that create new words."  All the words in this section parse the next token from the input buffer and create a new word with that token as its name.  This is annotated with *"name"* in the Defining Word's stack comment.
 
 `create` *( "name" -- )*  "create"  
-*Create* a new word named *"name"* and place its code field in ROM at the current position of the ROMspace pointer.  When invoked, the new word pushes its ROM address onto the Data Stack, allowing software to access whatever data is at that position in ROM.  This region of data is called the *data field* of the Created word.  The "type" of the data depends on how the Created word is used.  All other Defining Words implicitly invoke `create`.
+*Create* a new word named *"name"* and place its code field in ROM at the current position of the ROMspace pointer.  When invoked, the new word pushes its ROM address onto the Data Stack, allowing software to access whatever data is at that position in ROM.  This region of data is called the *data field* of the Created Word.  The "type" of the data depends on how the Created Word is used.  All other Defining Words implicitly invoke `create`.
+
+`,` *( n -- )*  "comma"  
+`h,` *( h -- )*  "H comma"  
+`c,` *( c -- )*  "C comma"  
+`2,` *( dlo dhi -- )*  "two comma"  
+*Compile* the top-of-stack item into the *data field* in ROM of the most recent Created Word.  Different versions exist for compiling 32-bit *cells* (`,`), 16-bit *half cells* (`h,`), 8-bit *chars* (`c,`), and 64-bit *double cells* (`2,`).
+
+Typical usage:  
+`create base-stats  25 ,  50 ,  40 ,  10 ,`
 
 `:` *( "name" -- )*  "colon"  
-Create a new *colon definition* and switch the environment to *compilation state*.  Compile each subsequent word into the *data field* of the new colon definition, until a `;` (semicolon) is encountered.  Once compiled, the new word can be executed analogously to a "subroutine" call.
+Create a new *colon definition* and switch the environment to *compilation state*.  Compile each subsequent word's address into the *data field* of the new colon definition (using `,`), until a `;` (semicolon) is encountered.  Once compiled, the new word can be executed analogously to a "subroutine" call.
+
+Typical usage:  
+`: checkpoint ( n -- ) start-location !   rings @ 50 >= if bonus-stage endif ;`
 
 `;` *( -- )*  "semicolon"  
 Finalize the currently-compiling colon definition, and switch the environment back to *interpretation state*.
 
 `constant` *( n "name" -- )*  "constant"  
 Create a new *constant* and place *n* in the constant's data field.  When invoked, the new word pushes *n* onto the Data Stack.
+
+Typical usage:  
+`7 constant max-speed`  
+`... speed @ max-speed > if max-speed  speed ! endif ...`  
+
+
+
 
 
 
