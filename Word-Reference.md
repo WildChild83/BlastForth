@@ -233,6 +233,12 @@ Perform a 32-bit rightward rotation of N by U bit positions.
 `demux` *( n mask -- n1 n2 )*  "demux"  
 *De-multiplex* a number.  N2 is the logical "and" of N with the mask, and N1 is the "and" of N with the mask's inverse.
 
+`true` *( -- flag )*  "true"  
+Push a *true flag* onto the stack.  A true flag is a cell with all bits set.
+
+`false` *( -- flag )*  "false"  
+Push a *false flag* onto the stack.  A false flag has all bits cleared.
+
 ## Flow Control
 
 `if` *( n -- )*  
@@ -303,14 +309,33 @@ If the step value is *negative*, use `/culminate`.
 `h@` *( addr -- h )*  "H fetch"  
 `c@` *( addr -- c )*  "C fetch"  
 `2@` *( addr -- dlo dhi )*  "two fetch"  
+*Fetch* an item from memory address *addr*.  The fetched item becomes the new top-of-stack item, replacing the address.  Different versions exist for fetching 32-bit *cells* (`@`), 16-bit *half cells* (`h@`), 8-bit *chars* (`c@`), and 64-bit *double cells* (`2@`).
 
+`!` *( n addr -- )*  "store"  
+`h!` *( h addr -- )*  "H store"  
+`c!` *( c addr -- )*  "C store"  
+`2!` *( dlo dhi addr -- )*  "two store"  
+*Store* a stack item into memory at the given address.  The number of bytes written to memory depends on which version of store is used.
+
+`sh@` *( addr -- n )*  "S H fetch"  
+`sc@` *( addr -- n )*  "S C fetch"  
+Fetch a half cell or char and *sign extend* it to a full 32-bit cell.
+
+`+!` *( n addr -- )*  "plus store"  
+`h+!` *( h addr -- )*  "H plus store"  
+`c+!` *( c addr -- )*  "C plus store"  
+`2+!` *( dlo dhi addr -- )*  "two plus store"  
+*Add* a stack item to the number at the given memory address, and *store* the result at the address in memory.
 
 ## Defining Words
 
-Aka "words that create new words."  All the words in this section parse the next token from the input buffer and create a new word with that token as its name.  This is annotated with *"name"* in the Defining Word's stack comment.
+Aka "words that create new words."  Certain words in this section parse the next token from the input buffer and create a new word with that token as its name.  This is annotated with *"name"* in the Defining Word's stack comment.
 
 `create` *( "name" -- )*  "create"  
-*Create* a new word named *"name"* and place its code field in ROM at the current position of the ROMspace pointer.  When invoked, the new word pushes its ROM address onto the Data Stack, allowing software to access whatever data is at that position in ROM.  This region of data is called the *data field* of the Created Word.  The "type" of the data depends on how the Created Word is used.  All other Defining Words implicitly invoke `create`.
+*Create* a new word named *"name"* and place its code field in ROM at the current position of the ROMspace pointer.  When invoked, the new word pushes its ROM address onto the Data Stack, allowing software to access whatever data is at that position in ROM.  This region of data is called the *data field* of the Created Word.  The "type" of the data depends on how the Created Word is used by other parts of the program.  All other Defining Words implicitly invoke `create`.
+
+*Example usage:*  
+`create base-stats  25 ,  50 ,  40 ,  10 ,`
 
 `,` *( n -- )*  "comma"  
 `h,` *( h -- )*  "H comma"  
@@ -318,13 +343,10 @@ Aka "words that create new words."  All the words in this section parse the next
 `2,` *( dlo dhi -- )*  "two comma"  
 *Compile* the top-of-stack item into the *data field* in ROM of the most recent Created Word.  Different versions exist for compiling 32-bit *cells* (`,`), 16-bit *half cells* (`h,`), 8-bit *chars* (`c,`), and 64-bit *double cells* (`2,`).
 
-Typical usage:  
-`create base-stats  25 ,  50 ,  40 ,  10 ,`
-
 `:` *( "name" -- )*  "colon"  
 Create a new *colon definition* and switch the environment to *compilation state*.  Compile each subsequent word's address into the *data field* of the new colon definition (using `,`), until a `;` (semicolon) is encountered.  Once compiled, the new word can be executed analogously to a "subroutine" call.
 
-Typical usage:  
+*Example usage:*  
 `: checkpoint ( n -- ) start-location !   rings @ 50 >= if bonus-stage endif ;`
 
 `;` *( -- )*  "semicolon"  
@@ -333,12 +355,36 @@ Finalize the currently-compiling colon definition, and switch the environment ba
 `constant` *( n "name" -- )*  "constant"  
 Create a new *constant* and place *n* in the constant's data field.  When invoked, the new word pushes *n* onto the Data Stack.
 
-Typical usage:  
+*Example usage:*  
 `7 constant max-speed`  
 `... speed @ max-speed > if max-speed  speed ! endif ...`  
 
+`buffer:` *( u "name" -- )*  "buffer colon"  
+Create a new *RAM buffer*.  Place the current value of the RAMspace pointer into the buffer's *data field* and advance the pointer by *n* bytes.  When invoked, the buffer will push it's RAM address onto the stack for software to access (i.e. with `@` (fetch) or `!` store)).  All Defining Words that allot space in RAM implicitly invoke `buffer:`.
 
+`variable` *( "name" -- )*  "variable"  
+Create a new user variable.  A `variable` is a `buffer:` with one cell (4 bytes) allotted to it.
 
+*Example usage:*  
+`variable hitpoints`  
+`: heal ( n -- ) hitpoints +! ;`  
+`: damage ( n -- ) hitpoints @ swap - dup hitpoints ! 0< if die endif ;`  
+
+`value` *( "name" -- )*  "value"  
+Create a new user value.  A `value` is the same as a `variable`, except whereas a `variable` pushes its address when invoked, a `value` automatically fetches the number at its address and pushes that.  To assign a number to a `value`, use `to` as explained below.  Under certain circumstances, a `value` might be more convenient than a `variable`.
+
+*Example usage:*  
+`value alive`  
+`: die ( -- ) false to alive`  
+`: mainloop ( -- ) begin alive while ... repeat ;`  
+
+`hvariable` *( "name" -- )*  "H variable"  
+`cvariable` *( "name" -- )*  "C variable"  
+`2variable` *( "name" -- )*  "two variable"  
+`hvalue` *( "name" -- )*  "H value"  
+`cvalue` *( "name" -- )*  "C value"  
+`2value` *( "name" -- )*  "two value"  
+Allot RAM buffers of various widths.
 
 
 
