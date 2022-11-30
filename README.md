@@ -49,14 +49,16 @@ Ok then.  Here we go:
 - Create a new text file in your Project folder.  Call it "main.fs" or something.
 - Enter the following code, exactly as it appears, into your new file:
 
-    include system.fs
-    Forth definitions
+```
+include system.fs  
+Forth definitions  
     
-    :entry
-        ." Hello, world!"
-        begin again ;
-    
-    romfile: test.gen
+:entry  
+    ." Hello, world!"  
+    begin again ;  
+
+romfile: test.gen  
+```
 
 Note the presence of a space between `."` and `Hello`, and between `again` and `;`.  These spaces are mandatory.  Also notice there *isn't* a space within ":entry".  This is also mandatory and will be explained shortly.
 
