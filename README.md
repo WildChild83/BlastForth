@@ -12,6 +12,64 @@ Linux users can also get Gforth from their distro's repositories, as it is a sta
 
 See the file *Word-Reference.md* in this folder for a list of all the words provided by BlastForth.
 
+# How to Build a Project
+
+### 1) Acquire the BlastForth source code.
+
+Since you're reading this, you've probably already done this step.
+
+### 2) Install the Gforth compiler.
+
+Linux users should be able to install the "gforth" package from their distro's repositories.  Mac and Windows users can dowload the appropriate installer from here:  
+https://www.complang.tuwien.ac.at/forth/gforth/Snapshots/current/
+
+Once installed, open a terminal window and enter the command `gforth`.  Once inside the Gforth environment, try typing the following phrase and pressing Enter (making sure to leave a space between each character):
+
+`2 3 + .`
+
+This sequence tells the interpreter to push a "2" then a "3" onto the stack, add them together, and type the result back to you.  If everything came out "ok" then you have just been introduced to the Forth programming language.  Type the word `bye` and press Enter to leave the Gforth environment.
+
+### 3) Read the book *Starting Forth* by Leo Brodie.
+
+Now that you have a working Forth on your computer, you need to learn how to use it!
+
+Use Gforth to work through the code excercises in the book, which can be read online for free:  
+https://www.forth.com/starting-forth/  
+
+### 4) Install a Genesis/Megadrive emulator.
+
+If you're ready to start writing your own software for the Sega Genesis, then I'm going to assume you know how to use an emulator.
+
+### 5) Build and run a BlastForth project.
+
+Ok then.  Here we go:
+
+- Create a new folder for your project.  We'll call it "Project" for now.
+- Copy both the "system.fs" file, and the "system" folder, from the BlastForth folder into the Project folder you just created.
+- Create a new text file in your Project folder.  Call it "main.fs" or something.
+- Enter the following code, exactly as it appears, into your new file:
+
+    include system.fs
+    Forth definitions
+    
+    :entry
+        ." Hello, world!"
+        begin again ;
+    
+    romfile: test.gen
+
+Note the presence of a space between `."` and `Hello`, and between `again` and `;`.  These spaces are mandatory.  Also notice there *isn't* a space within ":entry".  This is also mandatory and will be explained shortly.
+
+- Open a terminal in your Project folder and enter the following command:
+
+`gforth main.fs`
+
+This will produce the file "test.gen" in your Project folder, which can be launched and tested with any Genesis emulator.  If you're using Gens for instance, do this:
+
+`gens test.gen`
+
+If your emulator says "hello" to you, then you have successfully Blasted Forth!
+
 # Style Notes
 
 This section explains the conventions used by the BlastForth environment.
