@@ -70,7 +70,7 @@ This will produce the file "test.gen" in your Project folder, which can be launc
 
 `gens test.gen`
 
-If the emulator says "hello" to you, then you have successfully Blasted Forth!
+If the machine says "hello" to you, then you have successfully Blasted Forth!
 
 # Style Notes
 
