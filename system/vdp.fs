@@ -42,7 +42,7 @@ code (init-video-config)
     vdp-buffer [#] a1 lea, (vdp-buffer) [#] a2 lea,
     5 d1 do [a2]+ [a1]+ move, loop next
 
-code !video-config
+code !video
     $8000 # d1 h move, vdp-buffer [#] a1 lea, vdp-ctrl [#] a2 lea,
     19 d7 do [a1]+ d1 c move, d1 [a2] h move, $0100 # d1 h add, loop next
 
@@ -132,6 +132,9 @@ $30 vdpsize: 32x128planes       $11 vdpsize: 64x64planes
 ( ---------------------------------------------------------------------------- )
 (       Video Memory Access                                                    )
 ( ---------------------------------------------------------------------------- )
+code >vram ( vramaddr -- u )
+    2 # tos lsl, 2 # tos h lsr, $4000 # tos or, tos swap, next
+
 {:} vdp-io: ( u -- )
     create , ;code ( addr -- )
         2 # tos lsl, 2 # tos h lsr, tos swap, [dfa] tos or,
@@ -163,8 +166,14 @@ code read ( addr  #halves -- )
 : store-vscroll ( src dest  #halves -- ) 2autoinc swap write-vsram write ;
 : fetch-vscroll ( src dest  #halves -- ) 2autoinc  rot  read-vsram  read ;
 
+: backcolor ( color -- ) 0 write-cram h>vdp ;
+
 ( ---------------------------------------------------------------------------- )
+(       Blast Processing                                                       )
 ( ---------------------------------------------------------------------------- )
+
+
+
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

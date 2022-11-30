@@ -24,10 +24,10 @@ Forth definitions
 (       A4=Float Stack      A0=Next Pointer     D0=Top of Data Stack           )
 ( ---------------------------------------------------------------------------- )
 { :   PC    ( -- romaddr ) alignrom romspace ; }
-{ :   PC:   ( -- ) PC constant ; }
+{ :   PC:   ( -- ) PC make ; }
 { : doprim, ( -- ) PC 4 + , ; }
 
-Assembler68k wid { constant asm68k-wid }
+Assembler68k wid make asm68k-wid
 { :  asm              host-only clean alignrom asm68k-wid >order ; }
 { : rawcode ( "name") host-only create PC host, asm   does> host-only @ ; }
 { :    anon ( -- xt ) host-only PC doprim, asm ; }
@@ -94,6 +94,40 @@ create docreated&    asm tos push, dfa tos move, next
     PC postpone literal   postpone (newxt)   postpone ;   asm  ; immediate }
 
 ( ---------------------------------------------------------------------------- )
+(       RAMspace Pointer                                                       )
+( ---------------------------------------------------------------------------- )
+{ create ramspace $FF0000 host, }
+{ : allot ( n -- ) ramspace +! ; }
+{ : here  ( -- u ) ramspace  @ ; }
+{ : +ramspace> ( n1 -- u1 ) ramspace @ tuck + ramspace ! ; }
+{ : alignram ( -- ) ramspace @ 1+ -2 and ramspace ! ; }
+{ : <memory>  @ compiling? if , exit endif 4 + romh@ $FF0000 + ; }
+
+( ---------------------------------------------------------------------------- )
+(       Deferred Words                                                         )
+( ---------------------------------------------------------------------------- )
+create dodefer&   asm
+    -1 # d1 move, [dfa] d1 h move, d1 a1 move,
+    [a1] dfa move, [dfa]+ a1 move, [a1] jump, end
+{ : defer ( "name" -- ) host-only 
+    create dodefer& codefield, 4 +ramspace> h, does> <memory> ; }
+
+code defer@ ( xt1 -- xt2 )
+    tos a1 move, 4 # a1 add, -1 # d1 move,
+    [a1] d1 h move, d1 a1 move, [a1] tos move, next
+code defer! ( xt1 xt2 -- )
+    tos a1 move, 4 # a1 add, -1 # d1 move,
+    [a1] d1 h move, d1 a1 move, [sp]+ [a1] move, tos pop, next
+
+code (action-of) ( -- xt )
+    -1 # d1 move, d1 h read, d1 a1 move, tos push, [a1] tos move, next
+code (is) ( xt -- )
+    -1 # d1 move, d1 h read, d1 a1 move, tos [a1] move, tos pop, next
+
+{ : action-of ( "name" -- xt ) comp-only (action-of) ' >body @ 4 + romh@ h, ; }
+{ : is        ( xt "name" -- ) comp-only (is)        ' >body @ 4 + romh@ h, ; }
+
+( ---------------------------------------------------------------------------- )
 (       Colon Definitions                                                      )
 ( ---------------------------------------------------------------------------- )
 { 2variable ]name
@@ -104,7 +138,8 @@ create docreated&    asm tos push, dfa tos move, next
 : ] ( -- ) host-only  state on   begin   ]parse   state @ not until ;
 : [ ( -- ) state off ;      aka ;end
 }
-code exit ( -- ) tp rpop, next
+
+DEBUG [IF] defer exit [ELSE] code exit  tp rpop, next [THEN]
 
 create docolon&    asm tp rpush, dfa tp move, next
 { : ; ( -- ) comp-only } exit { state off ; }
@@ -174,13 +209,6 @@ create do2const&   asm tos push, [dfa]+ push, [dfa] tos move, next
 ( ---------------------------------------------------------------------------- )
 (       Memory Buffers                                                         )
 ( ---------------------------------------------------------------------------- )
-{ create ramspace $FF0000 host, }
-{ : allot ( n -- ) ramspace +! ; }
-{ : here  ( -- u ) ramspace  @ ; }
-{ : +ramspace> ( n1 -- u1 ) ramspace @ tuck + ramspace ! ; }
-{ : alignram ( -- ) ramspace @ 1+ -2 and ramspace ! ; }
-{ : <memory>  @ compiling? if , exit endif 4 + romh@ $FF0000 + ; }
-
 create domem&   asm tos push, -1 # tos move, [dfa] tos h move, next
 { : buffer: ( u "name" -- ) host-only 
     create domem& codefield, +ramspace> h, does> <memory> ; }
@@ -241,30 +269,6 @@ create +to2value&  doprim, asm
 { : 2value ( "name" -- ) host-only 
     create do2value& codefield, to2value& host, +to2value& host,
     alignram 8 +ramspace> h, does> <memory> ; }
-
-( ---------------------------------------------------------------------------- )
-(       Deferred Words                                                         )
-( ---------------------------------------------------------------------------- )
-create dodefer&   asm
-    -1 # d1 move, [dfa] d1 h move, d1 a1 move,
-    [a1] dfa move, [dfa]+ a1 move, [a1] jump, end
-{ : defer ( "name" -- ) host-only 
-    create dodefer& codefield, 4 +ramspace> h, does> <memory> ; }
-
-code defer@ ( xt1 -- xt2 )
-    tos a1 move, 4 # a1 add, -1 # d1 move,
-    [a1] d1 h move, d1 a1 move, [a1] tos move, next
-code defer! ( xt1 xt2 -- )
-    tos a1 move, 4 # a1 add, -1 # d1 move,
-    [a1] d1 h move, d1 a1 move, [sp]+ [a1] move, tos pop, next
-
-code (action-of) ( -- xt )
-    -1 # d1 move, d1 h read, d1 a1 move, tos push, [a1] tos move, next
-code (is) ( xt -- )
-    -1 # d1 move, d1 h read, d1 a1 move, tos [a1] move, tos pop, next
-
-{ : action-of ( "name" -- xt ) comp-only (action-of) ' >body @ 4 + romh@ h, ; }
-{ : is        ( xt "name" -- ) comp-only (is)        ' >body @ 4 + romh@ h, ; }
 
 ( ---------------------------------------------------------------------------- )
 (       Data Lists                                                             )

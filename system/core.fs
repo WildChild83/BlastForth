@@ -12,6 +12,9 @@
 (           - 68k.fs                                                           )
 (           - forth.fs                                                         )
 (                                                                              )
+(       TODO:                                                                  )
+(           - multiplication and division                                      )
+(                                                                              )
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
@@ -22,6 +25,7 @@ Forth definitions
  0 constant false
  4 constant cell
  2 constant half
+ 1 constant byte
 
 { '  + }    anon          [sp]+ tos add, next   host/target:  +
 { '  - }    anon tos neg, [sp]+ tos add, next   host/target:  -
@@ -61,20 +65,6 @@ Forth definitions
                     tos push, d2 tos move, next     host/target:  rot
 { ' -rot }      anon d1 pop, d2 pop, tos push, 
                      d2 push, d1 tos move, next     host/target: -rot
-{ ' umin }      anon d1 pop, d1 tos comp,
-                    ugt if d1 tos move, endif next  host/target: umin
-{ ' umax }      anon d1 pop, d1 tos comp,
-                    ult if d1 tos move, endif next  host/target: umax
-{ '  min }      anon d1 pop, d1 tos comp, 
-                     gt if d1 tos move, endif next  host/target: min
-{ '  max }      anon d1 pop, d1 tos comp, 
-                     lt if d1 tos move, endif next  host/target: max
-
-{ ' 0= }        anon tos test, tos z= set?,
-                    tos w ext, tos ext, next        host/target:  0=  aka not
-{ ' 0<> }       anon tos test, tos z<> set?,
-                    tos w ext, tos ext, next        host/target:  0<> aka flag
-
 { ' pick }      anon 2 # tos lsl,
                     [sp tos+ 0] tos move, next      host/target: pick
 { ' roll }
@@ -83,10 +73,23 @@ Forth definitions
         [a2] tos move, d6 begin -[a2] -[a1] move, loop 4 # sp add, next
                                                     host/target: roll
 
+{ :noname 1+ -2 and ; } anon tos inc, -2 # tos b and, next host/target: aligned
+
+PC: 'noop
 { :noname ; }   anon next   host/target: noop       aka chars   aka bytes
 
 { :noname 10 lshift ; }
 anon 10 # d1 move, d1 tos lsl, next                 host/target: kilobytes
+
+create donoop& asm next
+
+( ---------------------------------------------------------------------------- )
+{ ' * } anon
+    d1 pop, d1 d2 h move, tos d2 mulu, d1 d3 h move, d1 swap,
+    d1 h test, z<> if tos d1 mulu, endif d1 swap, d1 h clear, d2 d1 add,
+    tos swap, tos h test, z<> if d3 tos mulu, endif tos swap, tos h clear,
+    d1 tos add, next
+host/target: *
 
 ( ---------------------------------------------------------------------------- )
 (       Dumb Words  [aka "compile-only"]                                       )
@@ -146,6 +149,32 @@ code d2/        1 # tos asr, [sp] roxr, next
 code d+         d1 pop, d2 pop, [sp]+ d1 add, d2 tos addx, d1 push, next
 code d-         d1 pop, d2 pop, d1 neg, tos neg,
                 [sp]+ d1 add, d2 tos addx, d1 push, next
+(
+code um*        
+    d1 d7 move, d1 d6 mulu, d6 swap, d2 d6 w move, d2 d7 mulu, d7 swap,
+    d0 d6 w move, d0 d7 mulu, d6 swap, d3 d6 w move, d3 d7 mulu,
+    d6 -1 # move, d6 w clear, d6 swap,
+    d3 swap, d4 d3 move, d4 w clear, d3 d6 and, d1 d4 add, d0 d3 addx,
+    d2 swap, d4 d2 move, d4 w clear, d2 d6 and, d1 d4 add, d0 d2 addx,
+    return, endcode
+
+code um*old     tos d1 h move, tos swap, d2 pop, d2 d3 h move, d2 swap,
+                \ tos=xH, d1=xL, d2=xH, d3=xL
+                d1 d4 h move,
+                \ tos=xH, d1=xL, d2=xH, d3=xL, d4=xL
+                d3 d4 mulu, tos d3 mulu, d2 d1 mulu, tos d2 mulu,
+                d1 swap, d3 swap,
+                \ d1=LH, d2=HH, d3=LH, d4=LL
+                tos clear, d1 tos h move, d1 h clear,
+                \ tos=0H, d1=L0, d2=HH, d3=LH, d4=LL
+
+                d5 clear, d3 d5 h move, d3 h clear,
+                \ tos=0H, d1=L0, d2=HH, d3=L0, d4=LL, d5=0H
+                d3 d1 add, d5 tos addx,
+                \ tos=0H', d1=L'0, d2=HH, d4=LL
+                d4 d1 add, d2 tos addx, d1 push, next
+                \ tos=HH, d1=LL
+)
 
 code h*         2 # sp add, [sp]+ tos h muls, next
 code h/         d1 pop, tos d1 divs, d1 tos h move, tos ext, next
@@ -179,8 +208,33 @@ code drshift
 
 code 16rotate   tos swap, next          synonym 32drotate swap
 
-code under+   tos [sp cell +] add, tos pop, next
-code under-   tos [sp cell +] sub, tos pop, next
+code umin       d1 pop, d1 tos comp, ugt if d1 tos move, endif next
+code umax       d1 pop, d1 tos comp, ult if d1 tos move, endif next
+code  min       d1 pop, d1 tos comp,  gt if d1 tos move, endif next
+code  max       d1 pop, d1 tos comp,  lt if d1 tos move, endif next
+
+code 0=               tos test, tos  z=  set?, tos w ext, tos ext, next aka not
+code 0<>              tos test, tos  z<> set?, tos w ext, tos ext, next aka flag
+code 0<               tos test, tos  lt  set?, tos w ext, tos ext, next
+code 0<=              tos test, tos  lt= set?, tos w ext, tos ext, next
+code 0>               tos test, tos  gt  set?, tos w ext, tos ext, next
+code 0>=              tos test, tos  gt= set?, tos w ext, tos ext, next
+code   =        [sp]+ tos comp, tos  z=  set?, tos w ext, tos ext, next
+code  <>        [sp]+ tos comp, tos  z<> set?, tos w ext, tos ext, next
+code  >         [sp]+ tos comp, tos  lt  set?, tos w ext, tos ext, next
+code  >=        [sp]+ tos comp, tos  lt= set?, tos w ext, tos ext, next
+code  <         [sp]+ tos comp, tos  gt  set?, tos w ext, tos ext, next
+code  <=        [sp]+ tos comp, tos  gt= set?, tos w ext, tos ext, next
+code u>         [sp]+ tos comp, tos ult  set?, tos w ext, tos ext, next
+code u>=        [sp]+ tos comp, tos ult= set?, tos w ext, tos ext, next
+code u<         [sp]+ tos comp, tos ugt  set?, tos w ext, tos ext, next
+code u<=        [sp]+ tos comp, tos ugt= set?, tos w ext, tos ext, next
+
+code d0=        [sp]+ tos or, tos z=  set?, tos w ext, tos ext, next
+code d0<>       [sp]+ tos or, tos z<> set?, tos w ext, tos ext, next
+
+code under+     tos [sp cell +] add, tos pop, next
+code under-     tos [sp cell +] sub, tos pop, next
 
 ( ---------------------------------------------------------------------------- )
 (       Flow Control Words                                                     )
@@ -231,24 +285,61 @@ code  (loop)    d1 h read, d2 rpop, d2 inc, [rp] d2 comp,
 code (+loop)    d1 h read, d2 rpop, d3 rpeek, d3 d2 comp, d4 neg set?,
                 tos d2 add, d3 d2 comp, tos neg set?, tos d4 b comp,
                 z= if d1 tp h add, d2 rpush, tos pop, next, endif
-                4 # rp add, tos pop, next
+                cell # rp add, tos pop, next
 code (-loop)    d1 h read, d2 rpop, d3 rpeek, d2 d3 comp, d4 neg set?,
                 tos d2 sub, d2 d3 comp, tos neg set?, tos d4 b comp,
                 z= if d1 tp h add, d2 rpush, tos pop, next, endif
-                4 # rp add, tos pop, next
+                cell # rp add, tos pop, next
+code (leave)    2 cells # rp add, [tp]+ tp h add, next
+code  culminate [rp cell +] d1 move, d1 dec, d1 [rp] move, next  aka +culminate
+code -culminate [rp cell +] d1 move, d1 inc, d1 [rp] move, next
+code /culminate [rp cell +] [rp] move, next
 
-{ :   do  ( --  0   dest ) comp-only   (do)   0      (dest)  ; }
-{ :  ?do  ( -- orig dest ) comp-only  (?do)  (orig)  (dest)  ; }
-{ :  loop ( orig dest -- ) comp-only  (loop) (>dest) (orig>) ; }
-{ : +loop ( orig dest -- ) comp-only (+loop) (>dest) (orig>) ; }
-{ : -loop ( orig dest -- ) comp-only (-loop) (>dest) (orig>) ; }
+Host definitions
+variable dumb dumb dumb !       25 cells allot
+: dumb+ dumb @ cell+ dup dumb ! ! ; : dumb- dumb @ dup cell- dumb ! @ ;
+: dumb? dumb @ dumb u> ; : dumb! begin dumb? while dumb- (orig>) repeat ;
+
+Forth definitions
+{ :   do   ( --  0   dest ) comp-only   (do)    0     (dest)  ; }
+{ :  ?do   ( -- orig dest ) comp-only  (?do)   (orig) (dest)  ; }
+{ :  loop  ( orig dest -- ) comp-only  (loop) (>dest) (orig>) dumb! ; }
+{ : +loop  ( orig dest -- ) comp-only (+loop) (>dest) (orig>) dumb! ; }
+{ : -loop  ( orig dest -- ) comp-only (-loop) (>dest) (orig>) dumb! ; }
+{ :  leave  ( L: -- orig )  comp-only (leave)  (orig)  dumb+  ; }
+
+( ---------------------------------------------------------------------------- )
+(       Records                                                                )
+( ---------------------------------------------------------------------------- )
+{ : record ( -- off ) host-only 0 ; }
+
+{ : begin-structure ( "name" -- addr off ) host-only 0 pconstant PC half- 0 ; }
+{ :   end-structure ( addr off -- )        host-only swap romh! ; }
+
+create dofield&     asm d1 clear, [dfa] d1 h move, d1 tos add, next
+{ : +field ( off size "name" -- off' ) host-only
+[ Optimization ] [IF]
+    create over if dofield& codefield, over h,rom,
+              else donoop&  codefield, 0 host, endif +
+    does> ( n -- n' )
+        compiling? if dup cell+ @ if @ , exit endif drop exit endif
+        cell+ @ + ; }
+[ELSE]
+    create dofield& codefield, over h,rom, +
+    does> ( n -- n' ) compiling? if @ , exit endif cell+ @ + ; }
+[THEN]
+
+{ :  field: ( off "name" -- off' ) host-only } aligned   cell  +field { ; }
+{ : hfield: ( off "name" -- off' ) host-only } aligned   half  +field { ; }
+{ : cfield: ( off "name" -- off' ) host-only }           byte  +field { ; }
+{ : 2field: ( off "name" -- off' ) host-only } aligned 2 cells +field { ; }
 
 ( ---------------------------------------------------------------------------- )
 (       Exceptions                                                             )
 ( ---------------------------------------------------------------------------- )
 alignram 8 cells allot hvariable (estack)
 
-: init-exceptions ( -- ) [ (estack) $FFFF and ]L (estack) h! ;
+: init-exceptions ( -- ) [ (estack) $FFFF and ] literal (estack) h! ;
 
 code (epush) ( -- )
     (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
@@ -262,6 +353,14 @@ code (edrop) ( -- ) (estack) [#] a3 lea, cell # [a3] h add, next
 : catch ( xt -- ) (epush) execute (edrop) 0 ;
 : throw  ( n -- ) ?if (epop) endif ;
 
+rawcode (throw) \ TOS=throw code
+    (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
+    [a1]+ d1 h move, d1 sp move, [a1]+ d1 h move, d1 rp move,
+    a1 [a3] h move, tp rpop, next
+
+Assembler68k definitions  { : throw-primitive, (throw) displacement branch, ; }
+Forth definitions
+
 ( ---------------------------------------------------------------------------- )
 (       Other Words                                                            )
 ( ---------------------------------------------------------------------------- )
@@ -269,8 +368,23 @@ code sp@    tos push, sp tos move, next
 code sp!    tos sp move, tos pop,  next
 code rp@    tos push, rp tos move, next
 code rp!    tos rp move, tos pop,  next
+code tp@    tos push, tp tos move, next
+code tp!    tos tp move, tos pop,  next
 code np@    tos push, np tos move, next
 code np!    tos np move, tos pop,  next
+
+alignram StackSize buffer: sp-limit&
+         StackSize buffer: sp&      aka rp-limit&         0 buffer: rp&
+
+FloatStack [IF]
+    aka fp-limit&    StackSize allot 0 buffer: fp&
+    code fdepth tos push, fp& # tos move, fp tos sub, 2 # tos asr, next
+    code fp@    tos push, fp tos move, next
+    code fp!    tos fp move, tos pop,  next
+[THEN]
+
+code rdepth tos push, rp& # tos move, rp tos sub, 2 # tos asr, next
+code  depth sp d1 move, tos push, sp& # tos move, d1 tos sub, 2 # tos asr, next
 
 code   mux  tos d1 move, [sp]+ tos and, d1 not, [sp]+ d1 and, d1 tos or, next
 code demux  tos d1 move, [sp]  tos and, d1 not, d1 [sp]  and, next

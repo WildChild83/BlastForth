@@ -12,22 +12,31 @@ Forth definitions {
 
 \ Rom output file size.  Max supported size is 4 megabytes.
 \   This number can also be specified in "kilobytes" or "bytes".
-1 megabytes constant SizeOfROM
+1 megabytes make SizeOfROM
 
 \ If DEBUG=true then program includes extra checks and error reporting
 \   (and larger, slower code).  Set to false for "release version."
-true constant DEBUG
+true make DEBUG
 
-\ Verbose directs the compiler to print detailed information.
-true constant Verbose
+\ Verbose directs the compiler to print detailed information to the terminal.
+true make Verbose
+
+\ Perform various compile-time optimizations for faster execution.
+true make Optimization
 
 \ If FloatStack=true, the program will be built with floating-point support,
 \   including a dedicated stack for floating-point numbers.
-false constant FloatStack
+false make FloatStack
 
 \ The Data Stack, Return Stack, and Float Stack (if used) will each occupy
 \   "StackSize" bytes in RAM.  Must be a multiple of 4.
-128 bytes constant StackSize
+128 bytes make StackSize
+
+\ Forth environments traditionally provide "floored" division, but the 68k CPU
+\   only performs "symmetric" division.  If you don't know the difference then
+\   just leave this attribute false.  This post explains the (gory) details:
+\       www.nimblemachines.com/symmetric-division-considered-harmful/
+false make FlooredDivision
 
 ( ---------------------------------------------------------------------------- )
 include system/romfile.fs
@@ -40,7 +49,7 @@ include system/romfile.fs
 Forth definitions
 
 ( Console )      ascii" SEGA GENESIS    "
-( Copyright )    ascii" (C)NAME 20xx    "
+( Copyright )    ascii" (C)NAME 20xx.JAN"
 ( Domestic )     ascii" Japanese Name                                   "
 ( Foreign )      ascii" Western Name                                    "
 ( Version # )    ascii" GM 00000001-01"
@@ -92,19 +101,11 @@ create next&  asm
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
-FloatStack [IF]
-    \ If you're using floats then uncomment one and ONLY one of the following:
+FloatStack [IF]     \ If using floats, uncomment one and ONLY one of these:
     include system/floatstack/float16.fs   \ 17-bit mantissa, 16-bit exponent
     \ include system/floatstack/float32.fs   \ 33-bit mantissa, 32-bit exponent
     \ include system/floatstack/ieee32.fs    \ 24-bit mantissa,  8-bit exponent
     \ include system/floatstack/ieee64.fs    \ 48-bit mantissa, 16-bit exponent
-
-[ELSE]
-    \ If we're not going to use a floating-point stack then make
-    \    'A4' available as a CPU register mnemonic
-    Assembler68k definitions
-    synonym  a4  fp         synonym [a4] [fp]       synonym  [a4]+ [fp]+
-    synonym [a4 [fp         synonym  a4+  fp+       synonym -[a4] -[fp]
 [THEN]
 
 ( ---------------------------------------------------------------------------- )
@@ -119,12 +120,16 @@ include system/audio/silence.fs
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
-(       More System Files                                                      )
+(       Other Hardware                                                         )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
 include system/vdp.fs           \ video display processor
-include system/text.fs          \ text disply, terminal output
+include system/text.fs          \ text display, terminal output
 include system/interrupts.fs    \ vertical and horizontal blank handlers
+
+DEBUG [IF] : <exit> rdrop r> tp! ; [THEN]
+
+include system/exceptions.fs    \ default exception handlers
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
@@ -133,12 +138,14 @@ include system/interrupts.fs    \ vertical and horizontal blank handlers
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
+\ system start-up will place the video hardware into the following state:
 : init-video ( -- )
     (init-video-config)       2autoinc 
     $C000 planeA        $B800 spritePlane       +h320 +v224 +ntsc
     $E000 planeB        $BC00 hScrollTable      64x64planes
-    $B000 windowPlane     255 hbi-counter       !video-config ;
+    $B000 windowPlane     255 hbi-counter       !video ;
 
+\ default palette will be copied into Palette 0 of Color RAM
 create default-palette
     $0000 h, $0008 h, $0080 h, $0800 h, $0088 h, $0808 h, $0880 h, $0AAA h,
     $0444 h, $000E h, $00E0 h, $0E00 h, $00EE h, $0E0E h, $0EE0 h, $0EEE h,
@@ -150,53 +157,63 @@ create default-palette
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
-\ user code entry point
+( ---------------------------------------------------------------------------- )
+(       User Code entry point                                                  )
+( ---------------------------------------------------------------------------- )
 create (:entry) 0 ,
 { : :entry   host-only  PC (:entry) rom!  docolon& , } ] { ; }
 
-\ system entry point
+( ---------------------------------------------------------------------------- )
+(       System Start-Up: Assembly part                                         )
+( ---------------------------------------------------------------------------- )
 68k-start: asm
 
-    \ disable CPU interrupts, disable display
-    $2700 # sr move,  $80048104 # vdp-ctrl [#] move,
+    \ disable CPU interrupts
+    $2700 # sr move,
     
     \ Trademark Security System check
-    $A10008 [#] test, z= if
-        $A1000C [#] w test, z= if
-            $A10001 [#] d1 b move, $F # d1 b and, z<> if
-                $53454741 # $A14000 [#] move,
+    $A10000 [#] a1 lea,
+    [a1 $8 +] test, z= if
+        [a1 $C +] w test, z= if
+            [a1 $1 +] d1 b move, $F # d1 b and, z<> if
+                $53454741 # [a1 $4000 +] move,
     endif endif endif
-    
+
     \ clear System RAM and CPU registers
     rp clear, $deadce11 # d1 move, 64 kilobytes cell/ d2 do d1 rpush, loop
     [rp]+ [[ d1 d2 d3 d4 d5 d6 d7 tos a1 a2 a3 fp tp sp rp np ]] movem,
 
     \ initialize stack pointers
-    alignram        StackSize allot here # rp move,
-                    StackSize allot here # sp move,
-    FloatStack [IF] StackSize allot here # fp move, [THEN]
+    rp& [#] rp lea, sp& [#] sp lea, FloatStack [IF] fp& [#] fp lea, [THEN]
 
     \ launch threading mechanism, transition to Forth code execution
-    next& # np move,  $4BFA0004 , next ]
+    next& [#] np lea,  $4BFA0004 , next ]
 
-    init-exceptions
+( ---------------------------------------------------------------------------- )
+(       System Start-Up: Forth part                                            )
+( ---------------------------------------------------------------------------- )
+    DEBUG [IF] ['] <exit> is exit [THEN]    \ "exit" is vectored in DEBUG mode
 
-    \ load sound driver
+    \ sound driver
     \ ...
 
-    \ set up video hardware
-    init-video    default-palette $00 16 store-color
-    15 init-text  planeA> to terminal page   0 to attributes
-    +video
+    \ video hardware
+    begin vdp-dma? not until init-video
+    default-palette $00 16 store-color
     
-    decimal
+    \ Forth environment
+    init-exceptions   0 to #vblanks   decimal
+
+    \ terminal text display
+    15 to text-color-index    $0000 load-glyph-data     ['] <emit> is emit
+     0 to attributes          planeA> terminal page     +video
 
     \ call user's entry point, catching any thrown exceptions
     (:entry) @ catch
     
-    \ hang the system if :entry returns...
-    begin again ;
-
+    \ display error code and stop
+    dup 0= if drop 1 endif system-crash ;
+    
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
@@ -206,7 +223,7 @@ create (:entry) 0 ,
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
-(       Hardware Cheat Sheet                                                   )
+(       Hardware Cheat Sheets                                                  )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
 \   68k Status Register     15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0

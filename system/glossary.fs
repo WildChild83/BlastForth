@@ -63,16 +63,17 @@ forth-wordlist
     Glossary Host definitions
 >order
 
-    include transcribe.fs
+    ( *** ) include transcribe.fs ( *** )
 
 : } ( -- ) previous ; immediate
 : host,  ( n -- )  , ;
 : hostc, ( c -- ) c, ;
+: make   ( "name" -- ) constant ;
 : name>interpret ( nt -- xt ) name>int ;
 
 ( ---------------------------------------------------------------------------- )
 forth-wordlist
-    Host wid  constant host-wordlist
+    Host wid   make host-wordlist
     Forth definitions
 >order
 
@@ -80,6 +81,8 @@ forth-wordlist
 : (   postpone ( ; immediate
 : synonym ( "newname" "oldname" ) parse-name  nextname  ' alias ;
 : aka     ( "newname" )           lastxt alias ;
+
+synonym make constant
 
 :  warnings  warnings on  ;
 : -warnings  warnings off ;
@@ -130,6 +133,10 @@ synonym flag 0<>     synonym not 0=
 : mem= ( addr1 u1 addr2 u2 -- flag ) compare 0= ;
 
 ( ---------------------------------------------------------------------------- )
+1 cells make cell
+: cell-   cell - ;
+
+( ---------------------------------------------------------------------------- )
 :     bytes ( n -- n' ) ;
 : kilobytes ( n -- n' ) 10 lshift ;
 : megabytes ( n -- n' ) 20 lshift ;
@@ -141,7 +148,7 @@ synonym flag 0<>     synonym not 0=
 : .kilobytes ( n -- )
     dup 1 megabytes > if .megabytes exit endif
     1 kilobytes /mod 0 .r   100 1024  */ 2 .n   ." kilobytes " ;
-: .bytes ( n -- ) dup 1 kilobytes > if .kilobytes exit endif   . ." bytes" ;
+: .bytes ( n -- ) dup 1 kilobytes > if .kilobytes exit endif   . ." bytes " ;
 
 : hex. ( n -- ) base @ swap  [char] $ emit  hex .  base ! ;
 : hex.s  ( -- ) base @ >r  hex .s   r> base ! ;

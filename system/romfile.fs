@@ -15,7 +15,7 @@ Host definitions
 variable rom        SizeOfROM allocate throw  rom !
 variable rom*       rom @ rom* !
 
-Verbose [IF] SizeOfROM .bytes .( allocated for ROM file.) [THEN]
+Verbose [IF] SizeOfROM .bytes .( allocated for ROM file. ) [THEN]
 
 : >1< ( n -- c ) $FF and ;
 : >2< ( n -- u ) dup  8 rshift >1< swap >1<  8 lshift or ;

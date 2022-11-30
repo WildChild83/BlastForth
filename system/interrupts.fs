@@ -18,48 +18,50 @@ Forth definitions
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
-(       Vblank Next                                                            )
+(       Vblank "Next"                                                          )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
-(           jump to the current vblank handler and resume normal execution     )
+(           jump to the current vblank routine and resume normal execution     )
 ( ---------------------------------------------------------------------------- )
-variable vblank         \ code field address of software vblank handler
+hvalue #vblanks             \ counts how many VBIs have occurred (up to 65535)
+ defer  vblank              \ code field address of software vblank routine
 
 create vbnext&  asm
     next& [#] np lea,       \ restore NP to "standard next"
+    1 # #vblanks [#] h add, \ increment VBI counter
     vblank [#] dfa move,    \ DFA = code field address [from vblank variable]
     [dfa]+ a1 move,         \  A1 = code field,  DFA = data field address
     [a1] jump,              \ jump to code field
     end
 
 ( ---------------------------------------------------------------------------- )
+: frame ( -- ) 0 to #vblanks begin #vblanks until ;
+
+( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
-(       Vertical Blank Handler  [hardware]                                     )
+(       Vertical Blank Handler                                                 )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
 (           switch from "standard next" to "vblank next"                       )
 ( ---------------------------------------------------------------------------- )
-hvariable vbi           \ counts how many VBIs have occurred
-
-asm 68k-vbi:            \ CPU vector table points here
-    vbi [#] h inc,      \ increment VBI counter
-    vbnext& [#] np lea, \ point NP to "vblank next"
-    ireturn,            \ all done!
+asm 68k-vbi:                \ CPU vector table points here
+    vbnext& [#] np lea,     \ point NP to "vblank next"
+    ireturn,                \ all done!
     end
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
-(       Horizontal Blank Handler  [hardware]                                   )
+(       Horizontal Blank Handler                                               )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
 (           jump directly to raw assembly routine  [Forth code is too slow]    )
 ( ---------------------------------------------------------------------------- )
-variable hblank         \ address of asm-only hblank handler
-                        \ ...which must end with an Ireturn,
+value hblank                \ address of asm-only hblank handler
+                            \   which must end with an Ireturn,
 
-asm 68k-hbi:            \ CPU vector table points here
-    hblank [#] rpush,   \ push address of hblank handler onto Return Stack
-    return,             \ ...and jump to the address we just pushed
+asm 68k-hbi:                \ CPU vector table points here
+    hblank [#] -[rp] move,  \ push address of hblank handler onto Return Stack
+    return,                 \   and jump to the address we just pushed
     end
 
 ( ---------------------------------------------------------------------------- )

@@ -36,23 +36,24 @@ Forth definitions       Glossary Assembler68k definitions {
 ( ---------------------------------------------------------------------------- )
 (       Registers                                                              )
 ( ---------------------------------------------------------------------------- )
-$1000 constant tos  $1004 constant d4   $2008 constant np   $200C constant fp
-$1001 constant d1   $1005 constant d5   $2009 constant a1   $200D constant tp
-$1002 constant d2   $1006 constant d6   $200A constant a2   $200E constant sp
-$1003 constant d3   $1007 constant d7   $200B constant a3   $200F constant rp
-$3001 constant ccr  $3002 constant sr   $3003 constant usp
+$1000 make tos  $1004 make d4   $2008 make np   $200C make fp   $3001 make ccr
+$1001 make d1   $1005 make d5   $2009 make a1   $200D make tp   $3002 make sr
+$1002 make d2   $1006 make d6   $200A make a2   $200E make sp   $3003 make usp
+$1003 make d3   $1007 make d7   $200B make a3   $200F make rp
+
+FloatStack not [IF] synonym a4 fp [THEN]
 
 ( ---------------------------------------------------------------------------- )
 (       Condition Codes                                                        )
 ( ---------------------------------------------------------------------------- )
-$4000 constant yes                      $4800 constant vclr
-$4100 constant no                       $4900 constant vset
-$4200 constant ugt                      $4A00 constant nclr aka pos
-$4300 constant ult=                     $4B00 constant nset aka neg
-$4400 constant cclr aka ugt=            $4C00 constant gt=
-$4500 constant cset aka ult             $4D00 constant lt
-$4600 constant z<>                      $4E00 constant gt
-$4700 constant z=                       $4F00 constant lt=
+$4000 make yes                      $4800 make vclr
+$4100 make no                       $4900 make vset
+$4200 make ugt                      $4A00 make nclr aka pos
+$4300 make ult=                     $4B00 make nset aka neg
+$4400 make cclr aka ugt=            $4C00 make gt=
+$4500 make cset aka ult             $4D00 make lt
+$4600 make z<>                      $4E00 make gt
+$4700 make z=                       $4F00 make lt=
 : +cc ( cc n -- n' ) swap $FFFFF0FF demux $4000 <> cc-error  + ;
 
 ( ---------------------------------------------------------------------------- )
@@ -73,7 +74,7 @@ variable opsize                                 : b  1 opsize ! ;   aka c
 ( ---------------------------------------------------------------------------- )
 (       Immediate Data                                                         )
 ( ---------------------------------------------------------------------------- )
-$5000 constant #
+$5000 make #
 
 : imm#, ( n -- )
     opsize @ case
@@ -94,18 +95,26 @@ variable ext1       variable ext2       variable ext
 %010001 addr: [a1]  %011001 addr: [a1]+  %100001 addr: -[a1]  %101001 addr: [a1
 %010010 addr: [a2]  %011010 addr: [a2]+  %100010 addr: -[a2]  %101010 addr: [a2
 %010011 addr: [a3]  %011011 addr: [a3]+  %100011 addr: -[a3]  %101011 addr: [a3
-%010100 addr: [fp]  %011100 addr: [fp]+  %100100 addr: -[fp]  %101100 addr: [fp
 %010101 addr: [tp]  %011101 addr: [tp]+  %100101 addr: -[tp]  %101101 addr: [tp
 %010110 addr: [sp]  %011110 addr: [sp]+  %100110 addr: -[sp]  %101110 addr: [sp
 %010111 addr: [rp]  %011111 addr: [rp]+  %100111 addr: -[rp]  %101111 addr: [rp
 
+FloatStack [IF]
+%010100 addr: [fp]  %011100 addr: [fp]+  %100100 addr: -[fp]  %101100 addr: [fp
+[ELSE]
+%010100 addr: [a4]  %011100 addr: [a4]+  %100100 addr: -[a4]  %101100 addr: [a4
+[THEN]
+
 : (ndx) ( addr -- flag ) dup @ $38 and $28 <> dup if nip exit endif $8 rot +! ;    
 :  ndx: ( n "name" -- ) create host, does> ( -- )
     ea (ndx) if ea' (ndx) effect-error endif @ ext @ +! ;
-$080F ndx: tos+     $480F ndx: d4+      $880F ndx: np+      $C80F ndx: fp+
+$080F ndx: tos+     $480F ndx: d4+      $880F ndx: np+    ( $C80F ndx: fp+ )
 $180F ndx: d1+      $580F ndx: d5+      $980F ndx: a1+      $D80F ndx: tp+
 $280F ndx: d2+      $680F ndx: d6+      $A80F ndx: a2+      $E80F ndx: sp+
 $380F ndx: d3+      $780F ndx: d7+      $B80F ndx: a3+      $F80F ndx: rp+
+
+$C80F FloatStack [IF] make fp+ [ELSE] make a4+ [THEN]
+
 : ih ( -- ) ext @ dup @ $F7FF and swap ! ;   aka iw
 
 : [#] ( n -- ) ?shalf not 1 and %111000 + addr!  ext @ !  $8000 ;
@@ -134,11 +143,11 @@ synonym dfa+ a3+        synonym [dfa  [a3       synonym  [dfa]+ [a3]+
 ( ---------------------------------------------------------------------------- )
 (       Operand Processors                                                     )
 ( ---------------------------------------------------------------------------- )
-$9001 constant  d'  $9002 constant  a'  $9008 constant  m'  $9031 constant sd'
-$9011 constant dd'  $9012 constant da'  $9018 constant dm'  $9013 constant ds'
-$9021 constant ad'  $9022 constant aa'  $9028 constant am'  $9083 constant ms'
-$9051 constant #d'  $9052 constant #a'  $9058 constant #m'  $9053 constant #s'
-$9081 constant md'  $9082 constant ma'  $9088 constant mm'  $9038 constant sm'
+$9001 make  d'      $9002 make  a'      $9008 make  m'      $9031 make sd'
+$9011 make dd'      $9012 make da'      $9018 make dm'      $9013 make ds'
+$9021 make ad'      $9022 make aa'      $9028 make am'      $9083 make ms'
+$9051 make #d'      $9052 make #a'      $9058 make #m'      $9053 make #s'
+$9081 make md'      $9082 make ma'      $9088 make mm'      $9038 make sm'
 
 : 1arg    ( n1 -- n1 n' )         dup  12 rshift $9000 + ;
 : 2arg ( n1 n2 -- n1 n2 n' ) 1arg third 8 rshift + ;
@@ -287,7 +296,7 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
         #m' of 2drop   0 (size+) ea (eadest) imm, ext1, endof
         ds' of      <status> sreg $44C0 + h, endof
         ms' of  nip <status> ea @ $44C0 + h, ext1, endof
-        #s' of  nip <status>      $44C0   imm, endof
+        #s' of  nip <status>      $46C0   imm, endof
         sd' of swap <status> sreg $40C0 + h, endof
         sm' of drop <status> ea @ $40C0 + h, ext1, endof
     invalid endcase clean ;
@@ -355,7 +364,7 @@ $4EC0 jump: jump, aka jmp,      $4E80 jump: jumpsub, aka jsr,
 ( ---------------------------------------------------------------------------- )
 (       Move 'em                                                               )
 ( ---------------------------------------------------------------------------- )
-$A000 constant [[
+$A000 make [[
 : ]] ( [[ .. -- mask )
     0 begin over [[ <> while
         swap 1arg case d' of 7 and endof a' of 15 and endof invalid endcase
@@ -413,8 +422,17 @@ $A000 constant [[
 : loop  ( reg dest -- ) displacement decbra, ;
 : loop? ( reg dest cc -- ) $100 xor >r displacement r> decbra?, ;
 
-: primitive,  ( addr -- ) [#] jump, ;
-: subroutine, ( addr -- ) [#] jumpsub, ;
+( ---------------------------------------------------------------------------- )
+(       Callers                                                                )
+( ---------------------------------------------------------------------------- )
+: (call,) ( addr jumpxt branchxt -- )
+    third displacement ?shalf if swap execute 2drop exit endif
+    2drop >r [#] r> execute ;
+
+: primitive,  ( addr -- )    ['] jump,    ['] branch, (call,) ;
+: subroutine, ( addr -- )    ['] jumpsub, ['] brasub, (call,) ;
+: primitive?, ( addr cc -- ) >r displacement r> branch?, ;
+: execute,    ( xt -- )      [#] dfa lea, [dfa]+ a1 move, [a1] jump, ;
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

@@ -88,17 +88,19 @@ create glyph-data  bytes[
 ( ---------------------------------------------------------------------------- )
 (       Load Text to Video Memory                                              )
 ( ---------------------------------------------------------------------------- )
-rawcode (init-glyph) \ A1=vdp data, A2=glyph data
+cvalue  text-color-index
+
+rawcode (load-glyph-data) \ A1=vdp data, A2=glyph data, TOS=color index
     7 d5 do [a2]+ d1 b move, 8 d4 do 1 # d1 b rol, 0 # d1 bittest, d2 z<> set?,
     tos d2 b and, 4 # d3 lsl, d2 d3 b or, loop d3 [a1] move, loop return, end
 
-code (init-text) ( color -- )
-    vdp-data [#] a1 lea,  glyph-data [#] a2 lea, d7 clear,
-    62 d6 do (init-glyph) displacement brasub, d7 [a1] move, loop
-     2 d6 do d7 [a1] move, (init-glyph) displacement brasub, loop
+code load-glyph-data ( vramaddr -- )
+    vdp-data [#] a1 lea, glyph-data [#] a2 lea, $8F02 # [a1 4 +] h move,
+    2 # tos lsl, 2 # tos h lsr, $4000 # tos or, tos swap, tos [a1 4 +] move,    
+    text-color-index [#] tos b move, 15 # tos b and, d7 clear,
+    62 d6 do (load-glyph-data) subroutine, d7 [a1] move, loop
+     2 d6 do d7 [a1] move, (load-glyph-data) subroutine, loop
     tos pop, next
-
-: init-text ( color -- ) 2autoinc   $0000 write-vram   (init-text) ;
 
 ( ---------------------------------------------------------------------------- )
 (       ASCII Conversion                                                       )
@@ -125,45 +127,84 @@ Forth definitions {
 : cstring" ( "text" -- ) [char] " parse cstring, ;
 }
 
+code  /string ( addr u n ) d1 pop, tos [sp] add, tos d1 sub, d1 tos move, next
+code 1/string ( addr u )   1 # [sp] add, tos dec, next
+
 ( ---------------------------------------------------------------------------- )
 (       Terminal Display                                                       )
 ( ---------------------------------------------------------------------------- )
-hvalue attributes
+hvalue attributes   6 allot
+\ cursorY=attributes+2, cursorX=+3, yShift=+4, xMax=+5, vram-addr=+6
 
-cvalue tx
-cvalue ty
-hvalue terminal
+code terminal ( vramaddr -- )
+    attributes [#] a1 lea, vdp-buffer [#] a2 lea, tos [a1 6 +] h move, tos pop,
+    [a2 16 +] d1 c move, 3 # d1 c and, 6 # d1 c add, 9 # d1 c comp, d2 z= set?,
+    d2 d1 c add, d1 [a1 4 +] c move, [a2 12 +] d1 c move, $81 # d1 c and,
+    z<> if 35 # [a1 5 +] c move, else 27 # [a1 5 +] c move, endif next
 
-: at-xy ( x y -- ) 0 max 27 min to ty   0 max 31 min to tx ;
-: page ( -- ) [ 0 0 ]2L at-xy ;
+code terminal-xy ( -- x y )
+    attributes [#] a1 lea, tos push, tos clear, [a1 3 +] tos c move,
+    tos push, [a1 2 +] tos c move, next
 
-: cr ( -- ) 0 to tx  ty 1+ 28 hmod to ty ;
+code at-xy ( x y -- )
+    attributes [#] a1 lea, 26 # tos c comp, d1 lt set?, d1 tos c and,
+    tos [a1 2 +] c move, tos pop, [a1 5 +] tos c comp, d1 lt set?,
+    d1 tos c and, tos [a1 3 +] c move, tos pop, next
 
+code cr ( -- )
+    attributes [#] a1 lea,   PC: (?cr)   [a1 3 +] c clear,
+    [a1 2 +] d1 c move, d1 c inc, 26 # d1 c comp, d2 gt= set?,
+    26 # d2 c and, d2 d1 c sub, d1 [a1 2 +] c move, next
+code ?cr ( addr u -- )
+    attributes [#] a1 lea, [a1 5 +] d1 c move, [a1 3 +] d1 c sub,
+    d1 tos c comp, (?cr) gt primitive?, next
+
+code (emit3) ( -- )
+    attributes [#] a1 lea, [a1 3 +] d1 c move, d1 c inc, [a1 5 +] d1 c comp,
+    ^ cr gt primitive?, d1 [a1 3 +] c move, next
+code (emit2) ( h vramaddr -- )
+    vdp-data [#] a1 lea, tos [a1 4 +] move, half # sp add,
+    [sp]+ [a1] h move, tos pop, next
+code (emit1) ( c -- h vramaddr )
+    attributes [#] a1 lea, [a1] tos h add, tos push, tos clear, d1 clear,
+    [a1 6 +] tos h move, [a1 2 +] d1 c move, d1 c inc, [a1 4 +] d2 c move,
+    d2 d1 h lsl, [a1 3 +] d2 c move, 1 # d2 c lsl, 4 # d2 c add, d2 d1 c add,
+    d1 tos h add, 2 # tos lsl, 2 # tos h lsr, $4000 # tos h add, tos swap, next
+: <emit> ( c -- ) (emit1) (emit2) (emit3) ;
 defer emit
-
-: (emit) ( c -- )
-    attributes +  terminal ty 7 lshift + tx 2* + write-vram  h>vdp 1 +to tx ;
-
-: type ( addr u -- ) 0 ?do count emit loop drop ;
 
 synonym bl false
 
-: space    ( -- ) bl emit ;
-: spaces ( n -- ) 0 max 0 ?do bl emit loop ;
+: type  ( addr u -- ) 0 ?do count emit loop drop ;
+: page         ( -- ) 0 0 at-xy ;
+: space        ( -- ) bl emit ;
+: spaces     ( n -- ) 0 max 0 ?do bl emit loop ;
+
+: parse-token ( addr u -- addr1 u1 addr2 u2 )
+    begin over c@ bl = over 0<> and while 1/string repeat
+    2dup begin over c@ bl <> over 0<> and while 1/string repeat
+    2swap third - ;
+
+: print ( addr u -- ) begin ?dup while parse-token ?cr type space repeat drop ;
 
 ( ---------------------------------------------------------------------------- )
 (       String Words                                                           )
 ( ---------------------------------------------------------------------------- )
-code (s") ( -- addr u )
+{:} (stringword) ( xt -- ) create , ;code ( -- addr u )
     tos push, tos clear, [tp]+ tos c move, tp push,
-    tp d1 move, tos d1 add, d1 inc, -2 # d1 c and, d1 tp move, next
-code (.") ( -- )
-    tos push, tos clear, [tp]+ tos c move, tp push,
-    tp d1 move, tos d1 add, d1 inc, -2 # d1 c and, d1 tp move, 
-    ' type [#] dfa lea, [dfa]+ a1 move, [a1] jump, end
+    tp d1 move, tos d1 add, d1 inc, -2 # d1 c and, d1 tp move,
+    [dfa] dfa move, [dfa]+ a1 move, [a1] jump, end
 
-{ : s" ( "text" -- ) comp-only [char] " parse (s") cstring, alignrom ; }
-{ : ." ( "text" -- ) comp-only [char] " parse (.") cstring, alignrom ; }
+'noop   (stringword) (s")
+' type  (stringword) (.")                
+' print (stringword) (print")
+
+{ :     s" ( "text" -- ) comp-only [char] " parse     (s") cstring, alignrom ; }
+{ :     ." ( "text" -- ) comp-only [char] " parse     (.") cstring, alignrom ; }
+{ :  type" ( "text" -- ) comp-only [char] " parse     (.") cstring, alignrom ; }
+{ : print" ( "text" -- ) comp-only [char] " parse (print") cstring, alignrom ; }
+
+: .flag ( flag -- ) if ." yes " exit endif ." no " ;
 
 ( ---------------------------------------------------------------------------- )
 (       Number Words                                                           )
@@ -184,22 +225,39 @@ code hold ( c -- )
 code #> ( n -- addr u )
     (numbuffer) [#] a1 lea, [a1] d1 move,
     d1 push, a1 tos move, d1 tos sub, next
-code ##> ( d -- addr u ) cell # sp add, ^ #> displacement branch, end
+code ##> ( d -- addr u ) cell # sp add, ^ #> primitive, end
 
-: # ( n -- n' ) base @ uh/mod swap 1+ hold ;
-: #s ( n -- 0 ) begin # dup 0= until ;
+code (##) ( ud flag -- ud' )
+    tos d4 move, tos pop, (numbuffer) [#] a1 lea,
+    [a1] a2 move, a2 dec, base half+ [#] d1 h move, d2 clear,
+    tos swap, tos d2 h move, d1 d2 divu, d2 tos h move,
+    tos swap, tos d2 h move, d1 d2 divu, d2 tos h move, d4 test, z<> if    
+        d3 pop, d3 swap,  d3 d2 h move, d1 d2 divu, d2  d3 h move,
+                d3 swap,  d3 d2 h move, d1 d2 divu, d2  d3 h move, d3 push,
+    endif d2 swap, d2 c inc, d2 [a2] c move, a2 [a1] move, next
+:  #  ( u -- u' ) false (##) ;
+: ## ( ud -- ud' ) true (##) ;
 
-: hex. ( u -- )
-    <# begin dup 15 and 1+ hold 4 rshift dup 0= until 40 hold #> type space ;
+:  #s ( n -- 0  ) begin  #  dup  0= until ;
+: ##s ( d -- 0d ) begin ## 2dup d0= until ;
+
+:   string  ( n -- addr u )  dup  abs  <#  #s swap sign #> ;
+:  dstring  ( d -- addr u ) tuck dabs <## ##s  rot sign ##> ;
+:  ustring  ( u -- addr u )  <#  #s #> ;
+: udstring ( ud -- addr u ) <## ##s ##> ;
+
+:   .  ( n -- )   string type space ;
+:  u.  ( u -- )  ustring type space ;
+:  d.  ( d -- )  dstring type space ;
+: ud. ( ud -- ) udstring type space ;
+
+:  hex. ( u )  base @ >r ." $" hex  u. r> base ! ;
+: dhex. ( ud ) base @ >r ." $" hex swap <# #s drop #s #> type space r> base ! ;
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
-
-
-
-
 
 
 
