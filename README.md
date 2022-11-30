@@ -65,7 +65,7 @@ Forth definitions
 romfile: test.gen
 ```
 
-Note the presence of a space between `."` and `Hello`, and between `again` and `;`.  These spaces are mandatory.  Also notice there *isn't* a space within ":entry".  This is also mandatory and will be explained shortly.
+Note the presence of a space between `."` and `Hello`, and between `again` and `;`.  These spaces are mandatory.  Also notice there *isn't* a space within `:entry`.  This is also mandatory and will be explained shortly.
 
 Now open a terminal in your Project folder and enter the following command:
 
