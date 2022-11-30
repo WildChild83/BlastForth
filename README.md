@@ -1,6 +1,6 @@
 # BlastForth
 
-A Forth-based game development environment for the Sega Genesis/Megadrive platform.  Currently at version 0.  This is still very much a work-in-progress.  Updates will be made to this Readme file when I have time and when I think of something to write down.  Ask me questions!
+A Forth-based software development kit for the Sega Genesis/Megadrive platform.  Currently at version 0.  This is still a work-in-progress.  Updates will be made to this Readme file when I have time and when I think of something to write down.  Ask me questions!
 
 Forth is a very powerful programming language/paradigm that you've probably never heard of.  The best way to learn it is to read the book *Starting Forth* by Leo Brodie.  First published in 1981, it remains today the best tutorial there is for the Forth programming language.  The BlastForth repository contains a PDF copy, or you can read it online here:  
 https://www.forth.com/starting-forth/
@@ -66,11 +66,11 @@ Now open a terminal in your Project folder and enter the following command:
 
 `gforth main.fs`
 
-This will produce the file "test.gen" in your Project folder, which can be launched and tested with any Genesis emulator.  If you're using Gens for instance, do this:
+This will produce the file "test.gen" in your Project folder, which can be launched and tested with any Genesis emulator (or run on real hardware with an Everdrive or ROM burner).  If you're using the Gens emulator for instance, do this:
 
 `gens test.gen`
 
-If your emulator says "hello" to you, then you have successfully Blasted Forth!
+If the emulator says "hello" to you, then you have successfully Blasted Forth!
 
 # Style Notes
 
