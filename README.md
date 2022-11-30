@@ -12,7 +12,7 @@ Linux users can also get Gforth from their distro's repositories, as it is a sta
 
 See the file *Word-Reference.md* in this folder for a list of all the words provided by BlastForth.
 
-# How to Build a Project
+# How to Use BlastForth
 
 ### 1) Acquire the BlastForth source code.
 
@@ -40,14 +40,19 @@ https://www.forth.com/starting-forth/
 
 If you're ready to start writing your own software for the Sega Genesis, then I'm going to assume you know how to use an emulator.
 
-### 5) Build and run a BlastForth project.
+### 5) Get a decent text editor.
+
+You can use any text editor you want to, but it should at least have syntax highlighting for the Forth programming language.  "Gedit" is a good option, as it is lightweight, simple, and cross-platform:  
+https://wiki.gnome.org/Apps/Gedit
+
+### 6) Build a BlastForth project.
 
 Ok then.  Here we go:
 
 - Create a new folder for your project.  We'll call it "Project" for now.
 - Copy both the "system.fs" file, and the "system" folder, from the BlastForth folder into the Project folder you just created.
 - Create a new text file in your Project folder.  Call it "main.fs" or something.
-- Enter the following code, exactly as it appears, into your new file:
+- Type the following code, exactly as it appears, into your new file:
 
 ```
 include system.fs
@@ -66,7 +71,11 @@ Now open a terminal in your Project folder and enter the following command:
 
 `gforth main.fs`
 
-This will produce the file "test.gen" in your Project folder, which can be launched and tested with any Genesis emulator (or run on real hardware with an Everdrive or ROM burner).  If you're using the Gens emulator for instance, do this:
+This will produce the file "test.gen" in your Project folder, which can be launched and tested with any Genesis emulator.  It can also be run on real hardware with an Everdrive or ROM burner.
+
+### 7) Run your program.
+
+Launch the "test.gen" file in your emulator.  If you're using the Gens emulator for instance, do this:
 
 `gens test.gen`
 
