@@ -120,6 +120,10 @@ This statement directs BlastForth to write your compiled program to the specifie
 
 # How Do I...?
 
+[How do I make an "immediate" word?](https://github.com/WildChild83/BlastForth/blob/main/README.md#how-do-i-make-an-immediate-word)  
+[How do I create my own Defining Words?](https://github.com/WildChild83/BlastForth/blob/main/README.md#how-do-i-create-my-own-defining-words)  
+[How do I manipulate the Dataspace Pointers?](https://github.com/WildChild83/BlastForth/blob/main/README.md#how-do-i-manipulate-the-dataspace-pointers)  
+
 ### How do I make an "immediate" word?
 
 ### How do I create my own Defining Words?
