@@ -15,9 +15,9 @@ See the file *Word-Reference.md* in this folder for a list of all the words prov
 ### Contents
 
 [How to Use BlastForth](https://github.com/WildChild83/BlastForth/blob/main/README.md#how-to-use-blastforth)  
-[Style Notes](https://github.com/WildChild83/BlastForth/blob/main/README.md#style-notes)  
 [The System.fs File](https://github.com/WildChild83/BlastForth/blob/main/README.md#the-systemfs-file)  
 [How Do I...?](https://github.com/WildChild83/BlastForth/blob/main/README.md#how-do-i)  
+[Style Notes](https://github.com/WildChild83/BlastForth/blob/main/README.md#style-notes)  
 
 # How to Use BlastForth
 
@@ -34,7 +34,7 @@ Once installed, open a terminal window and enter the command `gforth`.  Once ins
 
 `2 3 + .`
 
-This sequence tells the interpreter to push a "2" then a "3" onto the stack, add them together, and type the result back to you.  If everything came out "ok" then you have just been introduced to the Forth programming language.  Type the word `bye` and press Enter to leave the Gforth environment.
+This sequence tells the interpreter to push a "2" then a "3" onto the stack, add them together, and type the result back to you.  If everything comes back "ok" then you have successfully programmed in the Forth language.  Type the word `bye` and press Enter to leave the Gforth environment.
 
 ### 3) Read the book *Starting Forth* by Leo Brodie.
 
@@ -82,13 +82,39 @@ This will produce the file "test.gen" in your Project folder, which can be launc
 
 ### 7) Run your program.
 
-Launch the "test.gen" file in your emulator.  If you're using the Gens emulator for instance, do this:
+Launch the "test.gen" file in your emulator.  If using Gens, for instance:
 
 `gens test.gen`
 
-If the machine says "hello" to you, then you have successfully Blasted Forth!
+If the machine says "hello" to you, then you have just Blasted Forth!
+
+### 8) How the "hello world" program works:
+
+`include system.fs`  
+This is the first line of executable code in every program you write.  It tells the compiler to parse the "system.fs" file and initialize the BlastForth development environment.
+
+`Forth definitions`  
+A Forth system contains hundreds or thousands of words, and these words are organized in *glossaries*.  The default glossary contains the most commonly-used words and is simply called "Forth."  The phrase `Forth definitions` tells the parser where to find the definitions of the words it parses, and it tells the compiler where to put the new definitions it creates.
+
+It is good programming practice for each of your source files to indicate which glossary its definitions belong to.  This indication must come *after* the `include` statements, because other files might change the current glossary to something else.
+
+`:entry`  
+Specifies the *entry point* of your application.  When you run your program, BlastForth first boots the system into a useable state, then it calls `:entry` and your code is in control from there.
+
+`." Hello, world!"`  
+This phrase consists of two parts: the `."` is one parsable token, and `Hello, world!"` is the other.  In the Forth language, *all* tokens must be seperated by spaces (whitespace is the one and only "delimiter").  As a result, quoted strings always have a single space at the beginning, and this space does NOT appear in the output.
+
+If you remove the initial space from the string, the parser will treat `."Hello,` as a single token and you'll get an "undefined word" error.
+
+`begin again ;`  
+"Begin" marks the beginning of a loop, and "again" causes an unconditional jump back to "begin."  Thus the phrase `begin again` produces an infinite loop, hanging the CPU.  The `;` (semicolon) marks the end of the current word definition.  In this case, `:entry` is the current word being defined.  
+
+`romfile: test.gen`  
+This statement causes BlastForth to write your compiled program to the specified disk file, free it from memory, and exit the Gforth environment.  It is always the last statement in your code.
 
 # The System.fs File
+
+
 
 # How Do I...?
 
