@@ -12,6 +12,11 @@ Linux users can also get Gforth from their distro's repositories, as it is a sta
 
 See the file *Word-Reference.md* in this folder for a list of all the words provided by BlastForth.
 
+### Contents
+
+[How to Use BlastForth](https://github.com/WildChild83/BlastForth/blob/main/README.md#how-to-use-blastforth)
+[Style Notes](https://github.com/WildChild83/BlastForth/blob/main/README.md#style-notes)
+
 # How to Use BlastForth
 
 ### 1) Acquire the BlastForth source code.
@@ -80,6 +85,14 @@ Launch the "test.gen" file in your emulator.  If you're using the Gens emulator 
 `gens test.gen`
 
 If the machine says "hello" to you, then you have successfully Blasted Forth!
+
+# The System.fs File
+
+# How Do I...?
+
+### How do I create my own Defining Words?
+
+### How do I make an "immediate" word?
 
 # Style Notes
 
