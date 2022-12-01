@@ -12,7 +12,7 @@ Linux users can also get Gforth from their distro's repositories, as it is a sta
 
 See the file *Word-Reference.md* in this folder for a list of all the words provided by BlastForth.
 
-### Contents
+## Contents
 
 [How to Use BlastForth](https://github.com/WildChild83/BlastForth/blob/main/README.md#how-to-use-blastforth)  
 [The System.fs File](https://github.com/WildChild83/BlastForth/blob/main/README.md#the-systemfs-file)  
@@ -94,7 +94,7 @@ If the machine says "hello" to you, then you have just Blasted Forth!
 This is the first line of executable code in every program you write.  It tells the interpreter to parse the "system.fs" file and initialize the BlastForth development environment.
 
 `Forth definitions`  
-A Forth system contains hundreds or thousands of words, and these words are organized into *glossaries*.  The default glossary contains the most commonly-used words and is simply called "Forth."  The phrase `Forth definitions` tells the interpreter where to find the definitions of the words it parses, and the compiler where to put the new definitions it creates.  Other glossaries also exist, such as `Assembler68k` which contains the built-in assembler, and `z80` which contains words related to the sound driver.
+A Forth system contains hundreds or thousands of words, and these words are organized into *glossaries*.  The default glossary contains the most commonly-used words and is simply called "Forth."  The phrase `Forth definitions` tells the interpreter where to find the definitions of the words it parses, and tells the compiler where to put the new definitions it creates.  Other glossaries also exist, such as `Assembler68k` which contains the built-in assembler, and `z80` which contains words related to the sound driver.
 
 It is good programming practice to have each source file indicate which glossary its words belong to.  This indication must come *after* any `include` statements, because other files might change the current glossary to something else.
 
