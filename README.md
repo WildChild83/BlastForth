@@ -14,8 +14,10 @@ See the file *Word-Reference.md* in this folder for a list of all the words prov
 
 ### Contents
 
-[How to Use BlastForth](https://github.com/WildChild83/BlastForth/blob/main/README.md#how-to-use-blastforth)
-[Style Notes](https://github.com/WildChild83/BlastForth/blob/main/README.md#style-notes)
+[How to Use BlastForth](https://github.com/WildChild83/BlastForth/blob/main/README.md#how-to-use-blastforth)  
+[Style Notes](https://github.com/WildChild83/BlastForth/blob/main/README.md#style-notes)  
+[The System.fs File](https://github.com/WildChild83/BlastForth/blob/main/README.md#the-systemfs-file)  
+[How Do I...?](https://github.com/WildChild83/BlastForth/blob/main/README.md#how-do-i)  
 
 # How to Use BlastForth
 
