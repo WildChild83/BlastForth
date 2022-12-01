@@ -59,14 +59,14 @@ code -video ( -- )
 
 code autoinc ( value -- )
     tos vdp-buffer $F + [#] c move, $8F00 # tos h add,
-    tos vdp-ctrl [#] h move, tos pop, next
+    tos vdp-ctrl [#] h move, tos pull, next
 
 code 2autoinc ( -- )
     $8F02 # vdp-ctrl [#] h move, 2 # vdp-buffer $F + [#] c move, next
 
 code hbi-counter ( value -- )
     tos vdp-buffer $A + [#] c move, $8A00 # tos h add,
-    tos vdp-ctrl [#] h move, tos pop, next
+    tos vdp-ctrl [#] h move, tos pull, next
 
 ( ---------------------------------------------------------------------------- )
 (       Buffered Video Registers                                               )
@@ -74,7 +74,7 @@ code hbi-counter ( value -- )
 {:} vdpreg: ( index shift -- )
     create c, c, ;code ( value -- )
         d1 clear, [dfa]+ d1 c move, d1 tos h lsr, [dfa]+ d1 c move,
-        vdp-buffer [#] a1 lea, tos [a1 d1+ 0] c move, tos pop, next
+        vdp-buffer [#] a1 lea, tos [a1 d1+ 0] c move, tos pull, next
 {:} vdpreg>: ( index shift -- )
     create c, c, ;code ( -- value )
         tos push, d1 clear, [dfa]+ d1 c move, d2 clear, [dfa]+ d2 c move,
@@ -138,26 +138,26 @@ code >vram ( vramaddr -- u )
 {:} vdp-io: ( u -- )
     create , ;code ( addr -- )
         2 # tos lsl, 2 # tos h lsr, tos swap, [dfa] tos or,
-        tos  vdp-ctrl [#] move, tos pop, next
+        tos  vdp-ctrl [#] move, tos pull, next
 
 $40000000 vdp-io: write-vram        $00000000 vdp-io: read-vram
 $C0000000 vdp-io: write-cram        $00000020 vdp-io: read-cram
 $40000010 vdp-io: write-vsram       $00000010 vdp-io: read-vsram
 
-code  >vdp ( n -- ) tos  vdp-data [#]   move, tos pop, next
-code h>vdp ( h -- ) tos  vdp-data [#] h move, tos pop, next
+code  >vdp ( n -- ) tos  vdp-data [#]   move, tos pull, next
+code h>vdp ( h -- ) tos  vdp-data [#] h move, tos pull, next
 
 code  vdp> ( -- n ) tos push, vdp-data [#] tos move, next
 code hvdp> ( -- h ) tos push, tos clear, vdp-data [#] tos h move, next
 
 code write ( addr  #halves -- )
-    vdp-data [#] a1 lea, a2 pop,
+    vdp-data [#] a1 lea, a2 pull,
     0 # tos bittest, z<> if tos dec, [a2]+ [a1] h move, endif
-    1 # tos h lsr, tos h dec, tos begin [a2]+ [a1] move, loop tos pop, next
+    1 # tos h lsr, tos h dec, tos begin [a2]+ [a1] move, loop tos pull, next
 code read ( addr  #halves -- )
-    vdp-data [#] a1 lea, a2 pop,
+    vdp-data [#] a1 lea, a2 pull,
     0 # tos bittest, z<> if tos dec, [a1] [a2]+ h move, endif
-    1 # tos h lsr, tos h dec, tos begin [a1] [a2]+ move, loop tos pop, next
+    1 # tos h lsr, tos h dec, tos begin [a1] [a2]+ move, loop tos pull, next
 
 : store-video   ( src dest  #halves -- ) 2autoinc swap write-vram  write ;
 : fetch-video   ( src dest  #halves -- ) 2autoinc  rot  read-vram   read ;

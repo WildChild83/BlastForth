@@ -169,7 +169,7 @@ $9081 make md'      $9082 make ma'      $9088 make mm'      $9038 make sm'
 : (easd)   ( -- n ) ea @ ea' @ sdreg ;
 : (string) ( arg1 arg2 addr -- )
     @ >r 2arg case
-        dd' of sdreg r> + h, endof
+        dd' of sdreg r> + opsize+ h, endof
         mm' of 2drop --? not effect-error  (easd)  r> + 8 + h, endof
     invalid endcase clean ;
 :  bcd: ( opcode "name" -- ) create host, does> ( arg1 arg2 ) <byte> (string) ;
@@ -254,7 +254,7 @@ $0080 bit: bitclr,  aka bclr,       $00C0 bit: bitset, aka bset,
     invalid endcase clean ;
 $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
 
-: comp, ( arg1 arg2 -- )
+: compare, ( arg1 arg2 -- )
     2arg case
         dd' of sdreg $B000 + opsize+ h, endof
         ad' of nobyte sdreg $B008 + opsize+ h, endof
@@ -302,7 +302,7 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
     invalid endcase clean ;
 
 : (disp) ( -- ) ea @ $38 and %101000 <> effect-error ;
-: (ugh)  ( n -- ) opsize @ 4 and 4 lshift + ;
+: (ugh)  ( n -- n' ) opsize @ 4 and 4 lshift + ;
 : movep, ( arg1 arg2 -- )
     nobyte 2arg case
         dm' of drop (disp) dreg $0188 + (ugh) ea @ 7 and + h, ext1, endof
@@ -348,14 +348,14 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
 
 : branch?, ( disp cc -- )
     $6000 +cc <word> swap ?shalf not disp-error
-    ?schar if $FF and + else swap h, endif h, clean ;
-: branch, ( disp -- ) yes branch?, ;
-: brasub, ( disp -- )  no branch?, ;
+    ?schar if $FF and + else swap h, endif h, clean ;   aka bra?,
+: branch, ( disp -- ) yes branch?, ;                    aka bra,
+: brasub, ( disp -- )  no branch?, ;                    aka bsr,
 
 : decbra?, ( reg disp cc -- )
     <word> rot 1arg d' <> invalid-error
-    sreg +cc $50C8 + h, w imm#, clean ;
-: decbra, ( reg disp -- ) no decbra?, ;
+    sreg +cc $50C8 + h, w imm#, clean ;                 aka dbra?,
+: decbra, ( reg disp -- ) no decbra?, ;                 aka dbra,
 
 : jump: ( opcode "name" -- ) create host, does> ( mem -- )
     @ swap 1arg m' <> invalid-error drop (ctrl) h, ext1, clean ;
@@ -387,15 +387,16 @@ $A000 make [[
 ( ---------------------------------------------------------------------------- )
 :  push, ( reg -- ) -[sp]       move, ;
 :  poke, ( reg -- )  [sp]       move, ;
-:  pop,  ( reg -- )  [sp]+ swap move, ;
+:  pull, ( reg -- )  [sp]+ swap move, ;
 :  peek, ( reg -- )  [sp]  swap move, ;
 : rpush, ( reg -- ) -[rp]       move, ;
 : rpoke, ( reg -- )  [rp]       move, ;
-: rpop,  ( reg -- )  [rp]+ swap move, ;
+: rpull, ( reg -- )  [rp]+ swap move, ;
 : rpeek, ( reg -- )  [rp]  swap move, ;
 :  read, ( reg -- )  [tp]+ swap move, ;
-:  inc,  ( reg -- )  1 } # { rot add, ;
-:  dec,  ( reg -- )  1 } # { rot sub, ;
+:   inc, ( reg -- )  1 } # { rot add, ;
+:   dec, ( reg -- )  1 } # { rot sub, ;
+: b-ext, ( reg -- )  dup w ext,  ext, ;     aka c-ext,
 
 ( ---------------------------------------------------------------------------- )
 (       Flow Control                                                           )

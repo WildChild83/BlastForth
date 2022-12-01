@@ -117,12 +117,12 @@ code defer@ ( xt1 -- xt2 )
     [a1] d1 h move, d1 a1 move, [a1] tos move, next
 code defer! ( xt1 xt2 -- )
     tos a1 move, 4 # a1 add, -1 # d1 move,
-    [a1] d1 h move, d1 a1 move, [sp]+ [a1] move, tos pop, next
+    [a1] d1 h move, d1 a1 move, [sp]+ [a1] move, tos pull, next
 
 code (action-of) ( -- xt )
     -1 # d1 move, d1 h read, d1 a1 move, tos push, [a1] tos move, next
 code (is) ( xt -- )
-    -1 # d1 move, d1 h read, d1 a1 move, tos [a1] move, tos pop, next
+    -1 # d1 move, d1 h read, d1 a1 move, tos [a1] move, tos pull, next
 
 { : action-of ( "name" -- xt ) comp-only (action-of) ' >body @ 4 + romh@ h, ; }
 { : is        ( xt "name" -- ) comp-only (is)        ' >body @ 4 + romh@ h, ; }
@@ -156,7 +156,7 @@ asm { : (dodoes>) ( -- addr ) host-only
 { : does> ( -- ) host-only
     PC postpone literal   postpone (newxt)   postpone ; (dodoes>) ; immediate }
 
-code execute ( xt -- ) tos dfa move, tos pop, [dfa]+ a1 move, [a1] jump, end
+code execute ( xt -- ) tos dfa move, tos pull, [dfa]+ a1 move, [a1] jump, end
 
 { : ]L    ( n -- ) host-only state on }  literal [ ] { ; }
 { : ]2L ( n n -- ) host-only state on } 2literal [ ] { ; }
@@ -228,9 +228,9 @@ create domem&   asm tos push, -1 # tos move, [dfa] tos h move, next
 create dovalue&   asm
     tos push, -1 # d1 move, [dfa] d1 h move, d1 a1 move, [a1] tos move, next
 create tovalue&   doprim, asm
-    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] move, tos pop, next
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] move, tos pull, next
 create +tovalue&  doprim,  asm
-    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] add, tos pop, next
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] add, tos pull, next
 { : value ( "name" -- ) host-only 
     create dovalue& codefield, tovalue& host, +tovalue& host,
     alignram 4 +ramspace> h, does> <memory> ; }
@@ -239,9 +239,9 @@ create dohvalue&   asm
     tos push, -1 # d1 move, [dfa] d1 h move, d1 a1 move,
     tos clear, [a1] tos h move, next
 create tohvalue&   doprim, asm
-    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] h move, tos pop, next
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] h move, tos pull, next
 create +tohvalue&  doprim, asm
-    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] h add, tos pop, next
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] h add, tos pull, next
 { : hvalue ( "name" -- ) host-only 
     create dohvalue& codefield, tohvalue& host, +tohvalue& host,
     alignram 2 +ramspace> h, does> <memory> ; }
@@ -250,9 +250,9 @@ create docvalue&   asm
     tos push, -1 # d1 move, [dfa] d1 h move, d1 a1 move,
     tos clear, [a1] tos c move, next
 create tocvalue&   doprim, asm
-    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] c move, tos pop, next
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] c move, tos pull, next
 create +tocvalue&  doprim, asm
-    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] c add, tos pop, next
+    -1 # d1 move, [tp]+ d1 h move, d1 a1 move, tos [a1] c add, tos pull, next
 { : cvalue ( "name" -- ) host-only 
     create docvalue& codefield, tocvalue& host, +tocvalue& host,
     1 +ramspace> h, does> <memory> ; }
@@ -262,10 +262,10 @@ create do2value&   asm
     tos clear, [a1]+ tos move, [a1]+ -[sp] move, next
 create to2value&   doprim, asm
     -1 # d1 move, [tp]+ d1 h move, d1 a1 move,
-    tos [a1]+ move, [sp]+ [a1] move, tos pop, next
+    tos [a1]+ move, [sp]+ [a1] move, tos pull, next
 create +to2value&  doprim, asm
     -1 # d1 move, [tp]+ d1 h move, d1 a1 move, [a1]+ d2 move, [a1] d1 move,
-    [sp]+ d1 add, tos d2 addx, d1 [a1] move, d2 -[a1] move, tos pop, next
+    [sp]+ d1 add, tos d2 addx, d1 [a1] move, d2 -[a1] move, tos pull, next
 { : 2value ( "name" -- ) host-only 
     create do2value& codefield, to2value& host, +to2value& host,
     alignram 8 +ramspace> h, does> <memory> ; }

@@ -100,7 +100,7 @@ code load-glyph-data ( vramaddr -- )
     text-color-index [#] tos b move, 15 # tos b and, d7 clear,
     62 d6 do (load-glyph-data) subroutine, d7 [a1] move, loop
      2 d6 do d7 [a1] move, (load-glyph-data) subroutine, loop
-    tos pop, next
+    tos pull, next
 
 ( ---------------------------------------------------------------------------- )
 (       ASCII Conversion                                                       )
@@ -127,7 +127,7 @@ Forth definitions {
 : cstring" ( "text" -- ) [char] " parse cstring, ;
 }
 
-code  /string ( addr u n ) d1 pop, tos [sp] add, tos d1 sub, d1 tos move, next
+code  /string ( addr u n ) d1 pull, tos [sp] add, tos d1 sub, d1 tos move, next
 code 1/string ( addr u )   1 # [sp] add, tos dec, next
 
 ( ---------------------------------------------------------------------------- )
@@ -137,8 +137,9 @@ hvalue attributes   6 allot
 \ cursorY=attributes+2, cursorX=+3, yShift=+4, xMax=+5, vram-addr=+6
 
 code terminal ( vramaddr -- )
-    attributes [#] a1 lea, vdp-buffer [#] a2 lea, tos [a1 6 +] h move, tos pop,
-    [a2 16 +] d1 c move, 3 # d1 c and, 6 # d1 c add, 9 # d1 c comp, d2 z= set?,
+    attributes [#] a1 lea, vdp-buffer [#] a2 lea,
+    tos [a1 6 +] h move, tos pull, [a2 16 +] d1 c move,
+    3 # d1 c and, 6 # d1 c add, 9 # d1 c compare, d2 z= set?,
     d2 d1 c add, d1 [a1 4 +] c move, [a2 12 +] d1 c move, $81 # d1 c and,
     z<> if 35 # [a1 5 +] c move, else 27 # [a1 5 +] c move, endif next
 
@@ -147,45 +148,45 @@ code terminal-xy ( -- x y )
     tos push, [a1 2 +] tos c move, next
 
 code at-xy ( x y -- )
-    attributes [#] a1 lea, 26 # tos c comp, d1 lt set?, d1 tos c and,
-    tos [a1 2 +] c move, tos pop, [a1 5 +] tos c comp, d1 lt set?,
-    d1 tos c and, tos [a1 3 +] c move, tos pop, next
+    attributes [#] a1 lea, 26 # tos c compare, d1 lt set?, d1 tos c and,
+    tos [a1 2 +] c move, tos pull, [a1 5 +] tos c compare, d1 lt set?,
+    d1 tos c and, tos [a1 3 +] c move, tos pull, next
 
 code cr ( -- )
     attributes [#] a1 lea,   PC: (?cr)   [a1 3 +] c clear,
-    [a1 2 +] d1 c move, d1 c inc, 26 # d1 c comp, d2 gt= set?,
+    [a1 2 +] d1 c move, d1 c inc, 26 # d1 c compare, d2 gt= set?,
     26 # d2 c and, d2 d1 c sub, d1 [a1 2 +] c move, next
 code ?cr ( addr u -- )
     attributes [#] a1 lea, [a1 5 +] d1 c move, [a1 3 +] d1 c sub,
-    d1 tos c comp, (?cr) gt primitive?, next
+    d1 tos c compare, (?cr) gt primitive?, next
 
 code (emit3) ( -- )
-    attributes [#] a1 lea, [a1 3 +] d1 c move, d1 c inc, [a1 5 +] d1 c comp,
+    attributes [#] a1 lea, [a1 3 +] d1 c move, d1 c inc, [a1 5 +] d1 c compare,
     ^ cr gt primitive?, d1 [a1 3 +] c move, next
 code (emit2) ( h vramaddr -- )
     vdp-data [#] a1 lea, tos [a1 4 +] move, half # sp add,
-    [sp]+ [a1] h move, tos pop, next
+    [sp]+ [a1] h move, tos pull, next
 code (emit1) ( c -- h vramaddr )
     attributes [#] a1 lea, [a1] tos h add, tos push, tos clear, d1 clear,
     [a1 6 +] tos h move, [a1 2 +] d1 c move, d1 c inc, [a1 4 +] d2 c move,
     d2 d1 h lsl, [a1 3 +] d2 c move, 1 # d2 c lsl, 4 # d2 c add, d2 d1 c add,
     d1 tos h add, 2 # tos lsl, 2 # tos h lsr, $4000 # tos h add, tos swap, next
 : <emit> ( c -- ) (emit1) (emit2) (emit3) ;
-defer emit
 
-synonym bl false
+synonym bl false        defer emit      defer type
 
-: type  ( addr u -- ) 0 ?do count emit loop drop ;
-: page         ( -- ) 0 0 at-xy ;
-: space        ( -- ) bl emit ;
-: spaces     ( n -- ) 0 max 0 ?do bl emit loop ;
+: <type> ( addr u -- ) 0 ?do count emit loop drop ;
+:  page         ( -- ) 0 0 at-xy ;
+:  space        ( -- ) bl emit ;
+:  spaces     ( n -- ) 0 max 0 ?do bl emit loop ;
 
-: parse-token ( addr u -- addr1 u1 addr2 u2 )
-    begin over c@ bl = over 0<> and while 1/string repeat
-    2dup begin over c@ bl <> over 0<> and while 1/string repeat
-    2swap third - ;
+: parse-token ( addr u c -- addr1 u1 addr2 u2 )
+    >r begin over c@ r@ = over 0<> and while 1/string repeat
+    2dup begin over c@ r@ <> over 0<> and while 1/string repeat
+    2swap third - rdrop ;
 
-: print ( addr u -- ) begin ?dup while parse-token ?cr type space repeat drop ;
+: <print> ( addr u -- )
+    begin ?dup while bl parse-token ?cr <type> space repeat drop ;
 
 ( ---------------------------------------------------------------------------- )
 (       String Words                                                           )
@@ -197,12 +198,9 @@ synonym bl false
 
 'noop   (stringword) (s")
 ' type  (stringword) (.")                
-' print (stringword) (print")
 
-{ :     s" ( "text" -- ) comp-only [char] " parse     (s") cstring, alignrom ; }
-{ :     ." ( "text" -- ) comp-only [char] " parse     (.") cstring, alignrom ; }
-{ :  type" ( "text" -- ) comp-only [char] " parse     (.") cstring, alignrom ; }
-{ : print" ( "text" -- ) comp-only [char] " parse (print") cstring, alignrom ; }
+{ : s" ( "text" -- ) comp-only [char] " parse (s") cstring, alignrom ; }
+{ : ." ( "text" -- ) comp-only [char] " parse (.") cstring, alignrom ; }
 
 : .flag ( flag -- ) if ." yes " exit endif ." no " ;
 
@@ -218,22 +216,22 @@ code <# ( -- )
     (numbuffer) [#] a1 lea, a1 [a1] move, next       aka <##
 code sign ( n -- )
     tos test, neg if (numbuffer) [#] a1 lea, [a1] a2 move, a2 dec,
-    47 # [a2] c move, a2 [a1] move, endif tos pop, next
+    47 # [a2] c move, a2 [a1] move, endif tos pull, next
 code hold ( c -- )
     (numbuffer) [#] a1 lea, [a1] a2 move, a2 dec,
-    tos [a2] c move, a2 [a1] move, tos pop, next
+    tos [a2] c move, a2 [a1] move, tos pull, next
 code #> ( n -- addr u )
     (numbuffer) [#] a1 lea, [a1] d1 move,
     d1 push, a1 tos move, d1 tos sub, next
 code ##> ( d -- addr u ) cell # sp add, ^ #> primitive, end
 
 code (##) ( ud flag -- ud' )
-    tos d4 move, tos pop, (numbuffer) [#] a1 lea,
+    tos d4 move, tos pull, (numbuffer) [#] a1 lea,
     [a1] a2 move, a2 dec, base half+ [#] d1 h move, d2 clear,
     tos swap, tos d2 h move, d1 d2 divu, d2 tos h move,
     tos swap, tos d2 h move, d1 d2 divu, d2 tos h move, d4 test, z<> if    
-        d3 pop, d3 swap,  d3 d2 h move, d1 d2 divu, d2  d3 h move,
-                d3 swap,  d3 d2 h move, d1 d2 divu, d2  d3 h move, d3 push,
+        d3 pull, d3 swap,  d3 d2 h move, d1 d2 divu, d2  d3 h move,
+                 d3 swap,  d3 d2 h move, d1 d2 divu, d2  d3 h move, d3 push,
     endif d2 swap, d2 c inc, d2 [a2] c move, a2 [a1] move, next
 :  #  ( u -- u' ) false (##) ;
 : ## ( ud -- ud' ) true (##) ;

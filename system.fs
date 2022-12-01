@@ -206,7 +206,8 @@ create (:entry) 0 ,
 
     \ terminal text display
     15 to text-color-index    $0000 load-glyph-data     ['] <emit> is emit
-     0 to attributes          planeA> terminal page     +video
+     0 to attributes          planeA> terminal page     ['] <type> is type
+     +video
 
     \ call user's entry point, catching any thrown exceptions
     (:entry) @ catch
