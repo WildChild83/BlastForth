@@ -91,26 +91,28 @@ If the machine says "hello" to you, then you have just Blasted Forth!
 ### 8) How the "hello world" program works:
 
 `include system.fs`  
-This is the first line of executable code in every program you write.  It tells the compiler to parse the "system.fs" file and initialize the BlastForth development environment.
+This is the first line of executable code in every program you write.  It tells the interpreter to parse the "system.fs" file and initialize the BlastForth development environment.
 
 `Forth definitions`  
-A Forth system contains hundreds or thousands of words, and these words are organized in *glossaries*.  The default glossary contains the most commonly-used words and is simply called "Forth."  The phrase `Forth definitions` tells the parser where to find the definitions of the words it parses, and it tells the compiler where to put the new definitions it creates.
+A Forth system contains hundreds or thousands of words, and these words are organized into *glossaries*.  The default glossary contains the most commonly-used words and is simply called "Forth."  The phrase `Forth definitions` tells the interpreter where to find the definitions of the words it parses, and the compiler where to put the new definitions it creates.  Other glossaries also exist, such as `Assembler68k` which contains the built-in assembler, and `z80` which contains words related to the sound driver.
 
-It is good programming practice for each of your source files to indicate which glossary its definitions belong to.  This indication must come *after* the `include` statements, because other files might change the current glossary to something else.
+It is good programming practice to have each source file indicate which glossary its words belong to.  This indication must come *after* any `include` statements, because other files might change the current glossary to something else.
 
 `:entry`  
-Specifies the *entry point* of your application.  When you run your program, BlastForth first boots the system into a useable state, then it calls `:entry` and your code is in control from there.
+Specifies the *entry point* of your application.  When you launch your program, BlastForth first boots the system into a useable state, then it calls `:entry` and your code is in control from there.
 
 `." Hello, world!"`  
-This phrase consists of two parts: the `."` is one parsable token, and `Hello, world!"` is the other.  In the Forth language, *all* tokens must be seperated by spaces (whitespace is the one and only "delimiter").  As a result, quoted strings always have a single space at the beginning, and this space does NOT appear in the output.
+This phrase consists of two parts: the `."` is one parsable token, and `Hello, world!"` is the other.  In the Forth language, *all* tokens must be seperated by spaces -- whitespace is the one and only "delimiter".  As a result, quoted strings always have a single space at the beginning, and this space does *not* appear in the output.
 
-If you remove the initial space from the string, the parser will treat `."Hello,` as a single token and you'll get an "undefined word" error.
+If you remove the initial space then the interpreter will treat `."Hello,` as a single word, resulting in an "undefined word" error.
 
 `begin again ;`  
-"Begin" marks the beginning of a loop, and "again" causes an unconditional jump back to "begin."  Thus the phrase `begin again` produces an infinite loop, hanging the CPU.  The `;` (semicolon) marks the end of the current word definition.  In this case, `:entry` is the current word being defined.  
+"Begin" marks the beginning of a loop, and "again" causes an unconditional jump back to "begin."  Thus the phrase `begin again` produces an infinite loop.  You will eventually expand this into your "main program loop."  The `;` (semicolon) marks the end of whatever word is currently being defined, which in this case is `:entry`.
+
+If `:entry` returns to its caller, a runtime exception gets thrown and the system hangs.
 
 `romfile: test.gen`  
-This statement causes BlastForth to write your compiled program to the specified disk file, free it from memory, and exit the Gforth environment.  It is always the last statement in your code.
+This statement directs BlastForth to write your compiled program to the specified disk file, free it from memory, and exit the host environment.  It is always the last statement in your code.
 
 # The System.fs File
 
@@ -118,9 +120,17 @@ This statement causes BlastForth to write your compiled program to the specified
 
 # How Do I...?
 
+### How do I make an "immediate" word?
+
 ### How do I create my own Defining Words?
 
-### How do I make an "immediate" word?
+### How do I manipulate the Dataspace Pointers?
+
+A standard desktop PC Forth runs exclusively from RAM, and the compiler has a *dataspace* pointer which indicates where the next cell of data will be appended to the dictionary.  The pointer increments every time a new word is compiled, and it works exactly like an assembler's "program counter" variable.
+
+Since the Genesis is a ROM-based system we have not one but two dataspaces to keep track of.  The *ROMspace* pointer holds the current position within the (up to) 4 megabyte cartridge ROM, and governs the placement of program code and immutable data.  The *RAMspace* pointer governs the allocation of mutable data within the system's 64 kilobyte RAM.
+
+Normally you won't access these pointers directly; Forth automatically updates the ROMspace pointer when you define new words, and  RAMspace when you declare user variables.
 
 # Style Notes
 
@@ -146,12 +156,5 @@ Words defined with `value` or `2value` do not have an initial value.  Like all m
 
 Words that begin with a `?` (question mark) generally leave their arguments on the stack.  Words that *end* with a `?` consume their stack arguments.
 
-# Dataspace
-
-A standard desktop PC Forth runs exclusively from RAM, and the compiler has a *dataspace* pointer which indicates where the next cell of data will be appended to the dictionary.  The pointer increments every time a new word is compiled, and it works exactly like an assembler's "program counter" variable.
-
-Since the Genesis is a ROM-based system we have not one but two dataspaces to keep track of.  The *ROMspace* variable holds the current position within the (up to) 4 megabyte cartridge ROM, and governs the placement of program code and immutable data.  The *RAMspace* variable governs the allocation of mutable data within the system's 64 kilobyte RAM.
-
-Normally you won't access these variable directly -- Forth automatically updates the ROMspace pointer when you define new words, and the RAMspace pointer when you declare user variables.
 
 
