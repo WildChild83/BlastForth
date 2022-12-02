@@ -133,23 +133,63 @@ Multiply two signed half-cell (16-bit) numbers, producing a signed single-cell r
 `uh*` *( uh1 uh2 -- u )*  "U H star"  
 Multiply two unsigned half-cell numbers, producing an unsigned single-cell result.
 
-`/` *( n h -- h' )*  "slash"  
-Divide a signed single-cell number *by a half-cell number,* producing a signed *half-cell* quotient.
+`um/mod` *( udlo udhi u -- umod uquot )*  "U M slash mod"  
+Perform *unsigned* division.  Divide double-cell number *ud* by *u*, returning the quotient and modulus (remainder).
 
-`u/` *( u uh -- uh' )*  "U slash"  
-Divide an unsigned single-cell number *by a half-cell number,* producing an unsigned *half-cell* quotient.
+`fm/mod` *( dlo dhi n -- mod quot )*  "F M slash mod"  
+Perform *floored signed* division.  The quotient is always rounded toward negative infinity and the modulus is always positive.
 
-`mod` *( n h -- uh )*  "mod"  
+`sm/rem` *( dlo dhi n -- rem quot )*  "S M slash rem"  
+Perform *symmetric signed* division.  The quotient is rounded toward zero and the remainder can be positive or negative.
+
+*NOTE: The following operators use symmetric division by default.  This can be changed in the Project Attributes portion of the "system.fs" file if you want floored division instead.*
+
+`/` *( n1 n2 -- n' )*  "slash"  
+Divide *n1* by *n2* using signed division.
+
+`u/` *( u1 u2 -- u' )*  "U slash"  
+Divide *u1* by *u2* using unsigned division.
+
+`mod` *( n1 n2 -- n')*  "mod"  
 Perform *signed* division and return the *modulus* (remainder).
 
-`umod` *( u uh -- uh' )*  "U mod"  
+`umod` *( u1 u2 -- u' )*  "U mod"  
 Perform *unsigned* division and return the *modulus* (remainder).
 
-`/mod` *( n h -- mod quot )*  "slash mod"  
+`/mod` *( n1 n2 -- mod quot )*  "slash mod"  
 Perform *signed* division and return the modulus and quotient.
 
-`u/mod` *( u uh -- umod uquot )*  "U slash mod"  
+`u/mod` *( u1 u2 -- umod uquot )*  "U slash mod"  
 Perform *unsigned* division and return the modulus and quotient.
+
+`*/` *( n1 n2 n3 -- n' )*  "star slash"  
+Multiply *n1* by *n2* producing a double-cell intermediate result, then divide it by *n3* producing a single-cell final result.  This word allows fractions to be implemented with integers only, without risk of overflow.
+
+`*/mod` *( n1 n2 n3 -- mod n' )*  "star slash mod"  
+Like `*/` but also returns the modulus (remainder) of the division operation.
+
+`u*/` *( u1 u2 u3 -- u' )*  "U star slash"  
+`u*/mod` *( u1 u2 u3 -- mod u' )*  "U star slash mod"  
+Like `*/` and `*/mod` but these work on unsigned numbers.
+
+`/f` *( n1 n2 -- quot )*  "slash F"  
+`modf` *( n1 n2 -- mod )*  "mod F"  
+`/modf` *( n1 n2 -- mod quot )*  "slash mod F"  
+`*/f` *( n1 n2 n3 -- n' )*  "star slash F"  
+`*/modf` *( n1 n2 -- mod n' )*  "star slash mod F"  
+Force the use of floored division.
+
+`/s` *( n1 n2 -- quot )*  "slash S"  
+`mods` *( n1 n2 -- rem )*  "mod S"  
+`/mods` *( n1 n2 -- rem quot )*  "slash mod S"  
+`*/s` *( n1 n2 n3 -- n' )*  "star slash S"  
+`*/mods` *( n1 n2 -- rem n' )*  "star slash mod S"  
+Force the use of symmetric division.
+
+`/h` *( n h -- quot )*  "slash H"  
+`modh` *( n h -- rem )*  "mod H"  
+`/modh` *( n h -- rem quot )*  "slash mod H"  
+Divide *n* by *half-cell* number *h*.  The upper 16 bits of *h* are ignored.  These operators perform only a single hardware division, making them faster than the others.  Hardware division on the 68k CPU is always symmetric.
 
 `s>d` *( n -- dlo dhi )*  "S to D"  
 Convert a signed *single*-cell number to a *double*-cell number.
