@@ -87,7 +87,7 @@ code   @        tos a1 move, [a1] tos move, next
 code  h@        tos a1 move, tos clear, [a1] tos h move, next
 code  c@        tos a1 move, tos clear, [a1] tos c move, next
 code sh@        tos a1 move, [a1] tos h move, tos ext, next
-code sc@        tos a1 move, [a1] tos c move, tos b-ext, next
+code sc@        tos a1 move, [a1] tos c move, tos extb, next
 code   !        tos a1 move, [sp]+ [a1] move, tos pull, next
 code  h!        tos a1 move, 2 # sp add, [sp]+ [a1] h move, tos pull, next
 code  c!        tos a1 move, 3 # sp add, [sp]+ [a1] c move, tos pull, next
@@ -165,55 +165,50 @@ code umax       d1 pull, d1 tos compare, ult if d1 tos move, endif next
 code  min       d1 pull, d1 tos compare,  gt if d1 tos move, endif next
 code  max       d1 pull, d1 tos compare,  lt if d1 tos move, endif next
 
-code 0=         tos test, tos  z=  set?, tos b-ext, next   aka not
-code 0<>        tos test, tos  z<> set?, tos b-ext, next   aka flag
-code 0<         tos test, tos  lt  set?, tos b-ext, next
-code 0<=        tos test, tos  lt= set?, tos b-ext, next
-code 0>         tos test, tos  gt  set?, tos b-ext, next
-code 0>=        tos test, tos  gt= set?, tos b-ext, next
-code   =        [sp]+ tos compare, tos  z=  set?, tos b-ext, next
-code  <>        [sp]+ tos compare, tos  z<> set?, tos b-ext, next
-code  >         [sp]+ tos compare, tos  lt  set?, tos b-ext, next
-code  >=        [sp]+ tos compare, tos  lt= set?, tos b-ext, next
-code  <         [sp]+ tos compare, tos  gt  set?, tos b-ext, next
-code  <=        [sp]+ tos compare, tos  gt= set?, tos b-ext, next
-code u>         [sp]+ tos compare, tos ult  set?, tos b-ext, next
-code u>=        [sp]+ tos compare, tos ult= set?, tos b-ext, next
-code u<         [sp]+ tos compare, tos ugt  set?, tos b-ext, next
-code u<=        [sp]+ tos compare, tos ugt= set?, tos b-ext, next
+code 0=         tos test, tos  z=  set?, tos extb, next   aka not
+code 0<>        tos test, tos  z<> set?, tos extb, next   aka flag
+code 0<         tos test, tos  lt  set?, tos extb, next
+code 0<=        tos test, tos  lt= set?, tos extb, next
+code 0>         tos test, tos  gt  set?, tos extb, next
+code 0>=        tos test, tos  gt= set?, tos extb, next
+code   =        [sp]+ tos compare, tos  z=  set?, tos extb, next
+code  <>        [sp]+ tos compare, tos  z<> set?, tos extb, next
+code  >         [sp]+ tos compare, tos  lt  set?, tos extb, next
+code  >=        [sp]+ tos compare, tos  lt= set?, tos extb, next
+code  <         [sp]+ tos compare, tos  gt  set?, tos extb, next
+code  <=        [sp]+ tos compare, tos  gt= set?, tos extb, next
+code u>         [sp]+ tos compare, tos ult  set?, tos extb, next
+code u>=        [sp]+ tos compare, tos ult= set?, tos extb, next
+code u<         [sp]+ tos compare, tos ugt  set?, tos extb, next
+code u<=        [sp]+ tos compare, tos ugt= set?, tos extb, next
 
-code  d0=       [sp]+ tos or, tos z=  set?, tos b-ext, next
-code  d0<>      [sp]+ tos or, tos z<> set?, tos b-ext, next
-code  d0<       tos test, tos  lt  set?, tos b-ext, cell # sp add, next
-code  d0>=      tos test, tos  gt= set?, tos b-ext, cell # sp add, next
+code  d0=       [sp]+ tos or, tos z=  set?, tos extb, next
+code  d0<>      [sp]+ tos or, tos z<> set?, tos extb, next
+code  d0<       tos test, tos  lt  set?, tos extb, cell # sp add, next
+code  d0>=      tos test, tos  gt= set?, tos extb, cell # sp add, next
 code  d=        d1 pull, [sp]+ tos sub, [sp]+ d1 sub,
-                d1 tos or, tos z=  set?, tos b-ext, next
+                d1 tos or, tos z=  set?, tos extb, next
 code  d<>       d1 pull, [sp]+ tos sub, [sp]+ d1 sub,
-                d1 tos or, tos z<> set?, tos b-ext, next
+                d1 tos or, tos z<> set?, tos extb, next
 code  d<        d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos  lt  set?, tos b-ext, next
+                tos d2 subx, tos  lt  set?, tos extb, next
 code  d<=       d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos  lt= set?, tos b-ext, next
+                tos d2 subx, tos  lt= set?, tos extb, next
 code  d>        d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos  gt  set?, tos b-ext, next
+                tos d2 subx, tos  gt  set?, tos extb, next
 code  d>=       d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos  gt= set?, tos b-ext, next
+                tos d2 subx, tos  gt= set?, tos extb, next
 code ud<        d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos ult  set?, tos b-ext, next
+                tos d2 subx, tos ult  set?, tos extb, next
 code ud<=       d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos ult= set?, tos b-ext, next
+                tos d2 subx, tos ult= set?, tos extb, next
 code ud>        d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos ugt  set?, tos b-ext, next
+                tos d2 subx, tos ugt  set?, tos extb, next
 code ud>=       d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos ugt= set?, tos b-ext, next
+                tos d2 subx, tos ugt= set?, tos extb, next
 
 code under+     tos [sp cell +] add, tos pull, next
 code under-     tos [sp cell +] sub, tos pull, next
-
-( ---------------------------------------------------------------------------- )
-(       Integer Math                                                           )
-( ---------------------------------------------------------------------------- )
-include imath.fs
 
 ( ---------------------------------------------------------------------------- )
 (       Flow Control Words                                                     )
@@ -332,12 +327,12 @@ code (edrop) ( -- ) (estack) [#] a3 lea, cell # [a3] h add, next
 : catch ( xt -- ) (epush) execute (edrop) 0 ;
 : throw  ( n -- ) ?if (epop) endif ;
 
-rawcode (throw) \ TOS=throw code
+rawcode (throw) \ TOS=throw code (must be non-zero)
     (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
     [a1]+ d1 h move, d1 sp move, [a1]+ d1 h move, d1 rp move,
     a1 [a3] h move, tp rpull, next
 
-Assembler68k definitions  { : throw-primitive, (throw) displacement branch, ; }
+Assembler68k definitions  { : throw-primitive,  (throw) primitive, ; }
 Forth definitions
 
 ( ---------------------------------------------------------------------------- )

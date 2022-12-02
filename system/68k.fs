@@ -200,7 +200,8 @@ $4000 single: negx,     $4400 single: neg,      $4600 single: not,
 : (status) ( arg1 arg2 opcode -- )
     >r 2arg #s' <> if r> (data) exit endif
     nip <status> 0 r> (and2) opsize+ imm, clean ;
-: xor, ( arg1 arg2 -- ) $B000 (status) ;            aka eor,
+: xor, ( arg1 arg2 -- )
+    2arg dd' = if swap sdreg $B100 + opsize+ h, exit endif (status) ;  aka eor,
 
 : logic: ( opcode "name" -- ) create host, does> ( arg1 arg2 -- )
     @ >r 2arg md' = if nip dreg r> (and1) ea, clean exit endif r> (status) ;
@@ -396,7 +397,7 @@ $A000 make [[
 :  read, ( reg -- )  [tp]+ swap move, ;
 :   inc, ( reg -- )  1 } # { rot add, ;
 :   dec, ( reg -- )  1 } # { rot sub, ;
-: b-ext, ( reg -- )  dup w ext,  ext, ;     aka c-ext,
+:  extb, ( reg -- )  dup w ext,  ext, ;     aka extc,
 
 ( ---------------------------------------------------------------------------- )
 (       Flow Control                                                           )

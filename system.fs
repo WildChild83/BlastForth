@@ -79,6 +79,7 @@ romspace { 512 bytes <> } [IF] .( Incorrect Sega ROM Header. ) [THEN]
 include system/68k.fs       \ Motorola 68000 assembler
 include system/forth.fs     \ Forth cross-compiler, standard defining words
 include system/core.fs      \ all the most important Forth words
+include system/imath.fs     \ integer math helpers
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
