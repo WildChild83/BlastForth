@@ -10,13 +10,9 @@ https://gforth.org/
 
 Linux users can also get Gforth from their distro's repositories, as it is a standard component of the GNU operating system.
 
-See the [wiki section](https://github.com/WildChild83/BlastForth/wiki) to learn how to get started.
-
-See the [Word-Reference.md](https://github.com/WildChild83/BlastForth/blob/main/Word-Reference.md) file for a list of all the words provided by BlastForth.
+See the [Wiki Section](https://github.com/WildChild83/BlastForth/wiki) to learn how to get started using BlastForth.
 
 # Style Notes
-
-This section explains the conventions used by the BlastForth environment.
 
 Like most Forths, BlastForth is NOT case-sensitive.  Uppercase and lowercase letters are treated the same, so `negate` and `NEGATE` are equal to one another.
 
