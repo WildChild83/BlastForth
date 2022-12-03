@@ -12,6 +12,13 @@
 (           - 68k.fs                                                           )
 (           - forth.fs                                                         )
 (                                                                              )
+(       TODO:                                                                  )
+(           - return stack [low mem]                                           )
+(           - exception stack                                                  )
+(           - number string buffer                                             )
+(           - data stack                                                       )
+(           - float stack [high mem]                                           )
+(                                                                              )
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
