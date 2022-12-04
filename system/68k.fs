@@ -15,7 +15,7 @@
 (           - more testing                                                     )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
-Forth definitions       Glossary Assembler68k definitions {
+Forth definitions       Glossary Assembler definitions {
 
 ( ---------------------------------------------------------------------------- )
 (       Errors                                                                 )
@@ -36,12 +36,12 @@ Forth definitions       Glossary Assembler68k definitions {
 ( ---------------------------------------------------------------------------- )
 (       Registers                                                              )
 ( ---------------------------------------------------------------------------- )
-$1000 make tos  $1004 make d4   $2008 make np   $200C make fp   $3001 make ccr
+$1000 make tos  $1004 make d4   $2008 make np ( $200C make fp ) $3001 make ccr
 $1001 make d1   $1005 make d5   $2009 make a1   $200D make tp   $3002 make sr
 $1002 make d2   $1006 make d6   $200A make a2   $200E make sp   $3003 make usp
 $1003 make d3   $1007 make d7   $200B make a3   $200F make rp
 
-FloatStack not [IF] synonym a4 fp [THEN]
+$200C FloatStack [IF] make fp [ELSE] make a4 [THEN]
 
 ( ---------------------------------------------------------------------------- )
 (       Condition Codes                                                        )

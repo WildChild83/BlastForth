@@ -27,14 +27,14 @@ Forth definitions
 { :   PC:   ( -- ) PC make ; }
 { : doprim, ( -- ) PC 4 + , ; }
 
-Assembler68k wid make asm68k-wid
+Assembler wid make asm68k-wid
 { :  asm              host-only clean alignrom asm68k-wid >order ; }
 { : rawcode ( "name") host-only create PC host, asm   does> host-only @ ; }
 { :    anon ( -- xt ) host-only PC doprim, asm ; }
 { :    code ( "name") host-only
     create PC host, doprim, asm does> comp-only @ , ; }
 
-Assembler68k definitions
+Assembler definitions
 { synonym end } ( -- ) }
 { : next, ( -- ) [np] jump, ; }
 { : next  ( -- ) next, end  ; }
@@ -139,9 +139,14 @@ code (is) ( xt -- )
 : [ ( -- ) state off ;      aka ;end
 }
 
-DEBUG [IF] defer exit [ELSE] code exit  tp rpop, next [THEN]
+DEBUG [IF]
+    defer  exit
+    create docolon&     asm $1234 [#] jump, end     PC: (docolon-vector)
+[ELSE]
+    code   exit         tp rpull, next
+    create docolon&     asm tp rpush, dfa tp move, next
+[THEN]
 
-create docolon&    asm tp rpush, dfa tp move, next
 { : ; ( -- ) comp-only } exit { state off ; }
 { : : ( "name" -- ) host-only
     create docolon& codefield, } ] { does> ( -- ) comp-only @ , ; }

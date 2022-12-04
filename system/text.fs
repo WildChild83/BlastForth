@@ -185,7 +185,7 @@ synonym bl false        defer emit      defer type
     2dup begin over c@ r@ <> over 0<> and while 1/string repeat
     2swap third - rdrop ;
 
-: <print> ( addr u -- )
+: <type-words> ( addr u -- )
     begin ?dup while bl parse-token ?cr <type> space repeat drop ;
 
 ( ---------------------------------------------------------------------------- )
@@ -207,7 +207,7 @@ synonym bl false        defer emit      defer type
 ( ---------------------------------------------------------------------------- )
 (       Number Words                                                           )
 ( ---------------------------------------------------------------------------- )
-variable base       40 allot variable (numbuffer)
+\ variable base       40 allot variable (numbuffer)
 
 code decimal  10 # base [#] move, next
 code hex      16 # base [#] move, next
@@ -249,7 +249,7 @@ code (##) ( ud flag -- ud' )
 :  d.  ( d -- )  dstring type space ;
 : ud. ( ud -- ) udstring type space ;
 
-:  hex. ( u )  base @ >r ." $" hex  u. r> base ! ;
+:  hex. ( u )  base @ >r hex <# #s 40 hold #> type space r> base ! ;
 : dhex. ( ud ) base @ >r ." $" hex swap <# #s drop #s #> type space r> base ! ;
 
 ( ---------------------------------------------------------------------------- )

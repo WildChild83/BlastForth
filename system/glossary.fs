@@ -70,6 +70,7 @@ forth-wordlist
 : hostc, ( c -- ) c, ;
 : make   ( "name" -- ) constant ;
 : name>interpret ( nt -- xt ) name>int ;
+: finalize ( -- ) s" system/finalize.fs" included ;
 
 ( ---------------------------------------------------------------------------- )
 forth-wordlist
@@ -107,6 +108,7 @@ synonym flag 0<>     synonym not 0=
 : -2rot   2rot 2rot        ;    aka 2-rot
 :  umin   2dup u> if swap endif drop ;
 :  umax   2dup u< if swap endif drop ;
+:  noop   ;
 
 ( ---------------------------------------------------------------------------- )
 : ?schar ( n -- n flag ) dup        -128        128 within ;

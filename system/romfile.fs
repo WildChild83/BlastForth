@@ -55,11 +55,12 @@ Host definitions
 Forth definitions {
 : printrom ( -- ) rom* @ rom @ 512 + ?do i c@ hex. loop cr freerom ;
 : romfile  ( addr u -- )
+    finalize
     cr 2dup Verbose IF ." Program size: " ELSE type ." , " THEN romstats
     w/o bin create-file throw >r
         rom @ rom* @ over - r@ write-file throw
         r> close-file throw
-    Verbose IF cr ." ROM file: " type ." , " SizeOfROM .bytes THEN
+    Verbose IF cr ." ROM file created: " type ." , " SizeOfROM .bytes THEN
     freerom ;
 : romfile: ( "name" -- ) parse-name romfile ;
 : romfile" ( "name" -- ) [char] " parse romfile ;
@@ -83,6 +84,8 @@ Forth definitions {
 : 68k-spurious:  ( -- ) 24 !68k-vector ;
 
 : 68k-trap: ( trap# -- ) 32 + !68k-vector ;
+: 68k-alltraps:   ( -- ) 16 0 do i 68k-trap: loop ;
+
 : 68k-start:      ( -- )  1   !68k-vector ;
 : 68k-stack!    ( u -- )  0 rom! ;
 

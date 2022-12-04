@@ -12,13 +12,6 @@
 (           - 68k.fs                                                           )
 (           - forth.fs                                                         )
 (                                                                              )
-(       TODO:                                                                  )
-(           - return stack [low mem]                                           )
-(           - exception stack                                                  )
-(           - number string buffer                                             )
-(           - data stack                                                       )
-(           - float stack [high mem]                                           )
-(                                                                              )
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
@@ -316,34 +309,7 @@ create dofield&     asm d1 clear, [dfa] d1 h move, d1 tos add, next
 { : 2field: ( off "name" -- off' ) host-only } aligned 2 cells +field { ; }
 
 ( ---------------------------------------------------------------------------- )
-(       Exceptions                                                             )
-( ---------------------------------------------------------------------------- )
-alignram 8 cells allot hvariable (estack)
-
-: init-exceptions ( -- ) [ (estack) $FFFF and ] literal (estack) h! ;
-
-code (epush) ( -- )
-    (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
-    rp -[a1] h move, sp -[a1] h move, a1 [a3] h move, next
-code (epop) ( -- )
-    (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
-    [a1]+ d1 h move, d1 sp move, [a1]+ d1 h move, d1 rp move,
-    a1 [a3] h move, next
-code (edrop) ( -- ) (estack) [#] a3 lea, cell # [a3] h add, next
-
-: catch ( xt -- ) (epush) execute (edrop) 0 ;
-: throw  ( n -- ) ?if (epop) endif ;
-
-rawcode (throw) \ TOS=throw code (must be non-zero)
-    (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
-    [a1]+ d1 h move, d1 sp move, [a1]+ d1 h move, d1 rp move,
-    a1 [a3] h move, tp rpull, next
-
-Assembler68k definitions  { : throw-primitive,  (throw) primitive, ; }
-Forth definitions
-
-( ---------------------------------------------------------------------------- )
-(       Other Words                                                            )
+(       Stack Accessors                                                        )
 ( ---------------------------------------------------------------------------- )
 code sp@    tos push, sp tos move, next
 code sp!    tos sp move, tos pull, next
@@ -354,24 +320,86 @@ code tp!    tos tp move, tos pull, next
 code np@    tos push, np tos move, next
 code np!    tos np move, tos pull, next
 
-alignram StackSize buffer: sp-limit&
-         StackSize buffer: sp&      aka rp-limit&         0 buffer: rp&
+alignram ReturnStackSize buffer: (rp-limit)    0 buffer: (rp-empty)
 
+code rdepth tos push, (rp-empty) # tos move, rp tos sub, 2 # tos asr, next
+
+( ---------------------------------------------------------------------------- )
+(       Exceptions                                                             )
+( ---------------------------------------------------------------------------- )
+ExceptionStackSize buffer: (estack-limit)   hvariable (estack)
+
+rawcode (throw) \ TOS=throw code (must be non-zero)
+    (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
+    [a1]+ d1 h move, d1 sp move, [a1]+ d1 h move, d1 rp move,
+    a1 [a3] h move, tp rpull, next
+
+Assembler definitions  { : throw-primitive,  (throw) primitive, ; }
+Forth definitions
+
+code (epush) ( -- )
+    (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, 
+    DEBUG [IF]
+        (estack-limit) $FFFF and # d1 h compare,
+        ult= if tos push, -53 # tos move, throw-primitive, endif
+    [THEN]
+    d1 a1 move, rp -[a1] h move, sp -[a1] h move, a1 [a3] h move, next
+code (epop) ( -- )
+    (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
+    DEBUG [IF]
+        [a1] d1 h move, sp [a1]+ h move, d1 sp move,
+        [a1] d1 h move, rp [a1]+ h move, d1 rp move,
+    [ELSE] [a1]+ d1 h move, d1 sp move, [a1]+ d1 h move, d1 rp move, [THEN]
+    a1 [a3] h move, next
+code (edrop) ( -- ) (estack) [#] a3 lea, cell # [a3] h add, next
+
+: catch ( xt -- ) (epush) execute (edrop) 0 ;
+: throw  ( n -- ) ?if (epop) endif ;
+
+: init-exceptions ( -- ) [ (estack) $FFFF and ] literal (estack) h! ;
+
+DEBUG [IF]
+    PC (docolon-vector) 2 - romh!
+    rawcode (docolon&)
+        rp d1 move, (rp-limit) $FFFF and # d1 h compare,
+        ult= if tos push, -5 # tos move, throw-primitive, endif
+        tp rpush, dfa tp move, next
+    code (eptrs) ( -- sp rp )
+        (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
+        tos push, [a1 -4 +] d1 h move, d1 push,
+        [a1 -2 +] d1 h move, d1 tos move, next
+[THEN]
+
+( ---------------------------------------------------------------------------- )
+(       Memory Regions                                                         )
+( ---------------------------------------------------------------------------- )
+\ numeric output string buffer
+variable base   40 allot variable (numbuffer)
+
+\ data stack
+StackSize buffer: (sp-limit) 0 buffer: (sp-empty)
+code depth ( -- n )
+    sp d1 move, tos push, (sp-empty) # tos move, d1 tos sub, 2 # tos asr, next
+
+\ float stack
 FloatStack [IF]
-    aka fp-limit&    StackSize allot 0 buffer: fp&
-    code fdepth tos push, fp& # tos move, fp tos sub, 2 # tos asr, next
+    FloatStackSize buffer: (fp-limit) 0 buffer: (fp-empty)
+    code fdepth tos push, (fp-empty) # tos move, fp tos sub, 2 # tos asr, next
     code fp@    tos push, fp tos move, next
     code fp!    tos fp move, tos pull, next
 [THEN]
 
-code rdepth tos push, rp& # tos move, rp tos sub, 2 # tos asr, next
-code  depth sp d1 move, tos push, sp& # tos move, d1 tos sub, 2 # tos asr, next
-
+( ---------------------------------------------------------------------------- )
+(       Other Words                                                            )
+( ---------------------------------------------------------------------------- )
 code   mux  tos d1 move, [sp]+ tos and, d1 not, [sp]+ d1 and, d1 tos or, next
 code demux  tos d1 move, [sp]  tos and, d1 not, d1 [sp]  and, next
 
 ( ---------------------------------------------------------------------------- )
 code bounds d1 peek, tos [sp] add, d1 tos move, next
+
+code within d1 pull, d1 tos sub, d2 pull, d1 d2 sub,
+            d2 tos compare, tos ugt set?, tos extb, next
 
 ( ---------------------------------------------------------------------------- )
 code ms ( n -- )

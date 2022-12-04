@@ -23,19 +23,20 @@ Forth definitions
 ( ---------------------------------------------------------------------------- )
 (           jump to the current vblank routine and resume normal execution     )
 ( ---------------------------------------------------------------------------- )
-hvalue #vblanks             \ counts how many VBIs have occurred (up to 65535)
- defer  vblank              \ code field address of software vblank routine
+hvalue #frames               \ counts how many VBIs have occurred (up to 65535)
+defer vertical-blank-handler \ code field address of software vblank routine
 
 create vbnext&  asm
-    next& [#] np lea,       \ restore NP to "standard next"
-    1 # #vblanks [#] h add, \ increment VBI counter
-    vblank [#] dfa move,    \ DFA = code field address [from vblank variable]
-    [dfa]+ a1 move,         \  A1 = code field,  DFA = data field address
-    [a1] jump,              \ jump to code field
+    next& [#] np lea,        \ restore NP to "standard next"
+    1 # #frames [#] h add,   \ increment frame counter
+    vertical-blank-handler
+        [#] dfa move,        \ DFA = code field address
+    [dfa]+ a1 move,          \  A1 = code field,  DFA = data field address
+    [a1] jump,               \ jump to code field
     end
 
 ( ---------------------------------------------------------------------------- )
-: frame ( -- ) 0 to #vblanks begin #vblanks until ;
+: frame ( -- ) 0 to #frames begin #frames until ;
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )

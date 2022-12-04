@@ -6,7 +6,9 @@
 include system/glossary.fs
 
 ( ---------------------------------------------------------------------------- )
+( **************************************************************************** )
 (       Project Attributes                                                     )
+( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
 Forth definitions {
 
@@ -28,26 +30,27 @@ true make Optimization
 \   including a dedicated stack for floating-point numbers.
 false make FloatStack
 
-\ The Data Stack, Return Stack, and Float Stack (if used) will each occupy
-\   "StackSize" bytes in RAM.  Must be a multiple of 4.
+\ The system stacks will occupy the following sizes in RAM.  "FloatStackSize"
+\   is ignored if "FloatStack" is false.  These must be multiples of 4.
 128 bytes make StackSize
+ 64 bytes make ReturnStackSize
+ 64 bytes make FloatStackSize
+ 32 bytes make ExceptionStackSize
 
-\ Forth environments traditionally provide "floored" division, but the 68k CPU
-\   only performs "symmetric" division.  If you don't know the difference then
-\   just leave this attribute false.  This post explains the (gory) details:
+\ Forth environments traditionally perform "floored" division, but the 68k CPU
+\   only provides "symmetric" division.  If you don't know the difference then
+\   just leave this false.  This post explains the (gory) details:
 \       www.nimblemachines.com/symmetric-division-considered-harmful/
 false make FlooredDivision
-
-( ---------------------------------------------------------------------------- )
-include system/romfile.fs
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
 (       Sega ROM Header                                                        )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
-Forth definitions
+include system/romfile.fs       Forth definitions
 
+( ---------------------------------------------------------------------------- )
 ( Console )      ascii" SEGA GENESIS    "
 ( Copyright )    ascii" (C)NAME 20xx.JAN"
 ( Domestic )     ascii" Japanese Name                                   "
@@ -67,7 +70,6 @@ Forth definitions
 ( Notes )        ascii"                                         "
 ( Countries )    ascii" JUE             "
 
-( ---------------------------------------------------------------------------- )
 \ Warn if header is the wrong size (comment this line to disable the warning)
 romspace { 512 bytes <> } [IF] .( Incorrect Sega ROM Header. ) [THEN]
 
@@ -111,6 +113,17 @@ FloatStack [IF]     \ If using floats, uncomment one and ONLY one of these:
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
+(       System Modules                                                         )
+( **************************************************************************** )
+( ---------------------------------------------------------------------------- )
+include system/vdp.fs           \ video display processor
+include system/text.fs          \ text display, terminal output
+include system/interrupts.fs    \ vertical and horizontal blank handlers
+include system/exceptions.fs    \ default exception handlers
+include system/allocate.fs      \ dynamic memory manager
+
+( ---------------------------------------------------------------------------- )
+( **************************************************************************** )
 (       Sound Driver                                                           )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
@@ -120,103 +133,37 @@ include system/audio/z80.fs
 include system/audio/silence.fs
 
 ( ---------------------------------------------------------------------------- )
-( **************************************************************************** )
-(       Other Hardware                                                         )
-( **************************************************************************** )
-( ---------------------------------------------------------------------------- )
-include system/vdp.fs           \ video display processor
-include system/text.fs          \ text display, terminal output
-include system/interrupts.fs    \ vertical and horizontal blank handlers
+Forth definitions
 
-DEBUG [IF] : <exit> rdrop r> tp! ; [THEN]
-
-include system/exceptions.fs    \ default exception handlers
+: init-audio \ this word will be invoked during system start-up
+    ;
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
-(       Default Video Configuration                                            )
+(       Video Configuration                                                    )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
-\ system start-up will place the video hardware into the following state:
-: init-video ( -- )
-    (init-video-config)       2autoinc 
-    $C000 planeA        $B800 spritePlane       +h320 +v224 +ntsc
-    $E000 planeB        $BC00 hScrollTable      64x64planes
-    $B000 windowPlane     255 hbi-counter       !video ;
-
-\ default palette will be copied into Palette 0 of Color RAM
 create default-palette
     $0000 h, $0008 h, $0080 h, $0800 h, $0088 h, $0808 h, $0880 h, $0AAA h,
     $0444 h, $000E h, $00E0 h, $0E00 h, $00EE h, $0E0E h, $0EE0 h, $0EEE h,
 
+: init-video \ this word will be invoked during system start-up
+    (init-video-config)     2 autoinc 
+    $C000 planeA        $B800 spritePlane       +h320  +v224  +ntsc
+    $E000 planeB        $BC00 hScrollTable      64x64planes
+    $B000 windowPlane     255 hbi-counter       
+    !video
+    default-palette $00 16 store-color ;
+
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
-(       Program Entry Point                                                    )
+(       End of System Code                                                     )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
-Forth definitions
+Verbose [IF] { cr } .( Compiling user code... ) [THEN]
 
-( ---------------------------------------------------------------------------- )
-(       User Code entry point                                                  )
-( ---------------------------------------------------------------------------- )
-create (:entry) 0 ,
-{ : :entry   host-only  PC (:entry) rom!  docolon& , } ] { ; }
-
-( ---------------------------------------------------------------------------- )
-(       System Start-Up: Assembly part                                         )
-( ---------------------------------------------------------------------------- )
-68k-start: asm
-
-    \ disable CPU interrupts
-    $2700 # sr move,
-    
-    \ Trademark Security System check
-    $A10000 [#] a1 lea,
-    [a1 $8 +] test, z= if
-        [a1 $C +] w test, z= if
-            [a1 $1 +] d1 b move, $F # d1 b and, z<> if
-                $53454741 # [a1 $4000 +] move,
-    endif endif endif
-
-    \ clear System RAM and CPU registers
-    rp clear, $deadce11 # d1 move, 64 kilobytes cell/ d2 do d1 rpush, loop
-    [rp]+ [[ d1 d2 d3 d4 d5 d6 d7 tos a1 a2 a3 fp tp sp rp np ]] movem,
-
-    \ initialize stack pointers
-    rp& [#] rp lea, sp& [#] sp lea, FloatStack [IF] fp& [#] fp lea, [THEN]
-
-    \ launch threading mechanism, transition to Forth code execution
-    next& [#] np lea,  $4BFA0004 , next ]
-
-( ---------------------------------------------------------------------------- )
-(       System Start-Up: Forth part                                            )
-( ---------------------------------------------------------------------------- )
-    DEBUG [IF] ['] <exit> is exit [THEN]    \ "exit" is vectored in DEBUG mode
-
-    \ sound driver
-    \ ...
-
-    \ video hardware
-    begin vdp-dma? not until init-video
-    default-palette $00 16 store-color
-    
-    \ Forth environment
-    init-exceptions   0 to #vblanks   decimal
-
-    \ terminal text display
-    15 to text-color-index    $0000 load-glyph-data     ['] <emit> is emit
-     0 to attributes          planeA> terminal page     ['] <type> is type
-     +video
-
-    \ call user's entry point, catching any thrown exceptions
-    (:entry) @ catch
-    
-    \ display error code and stop
-    dup 0= if drop 1 endif system-crash ;
-    
-( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

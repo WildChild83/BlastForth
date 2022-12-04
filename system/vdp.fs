@@ -61,9 +61,6 @@ code autoinc ( value -- )
     tos vdp-buffer $F + [#] c move, $8F00 # tos h add,
     tos vdp-ctrl [#] h move, tos pull, next
 
-code 2autoinc ( -- )
-    $8F02 # vdp-ctrl [#] h move, 2 # vdp-buffer $F + [#] c move, next
-
 code hbi-counter ( value -- )
     tos vdp-buffer $A + [#] c move, $8A00 # tos h add,
     tos vdp-ctrl [#] h move, tos pull, next
@@ -159,12 +156,12 @@ code read ( addr  #halves -- )
     0 # tos bittest, z<> if tos dec, [a1] [a2]+ h move, endif
     1 # tos h lsr, tos h dec, tos begin [a1] [a2]+ move, loop tos pull, next
 
-: store-video   ( src dest  #halves -- ) 2autoinc swap write-vram  write ;
-: fetch-video   ( src dest  #halves -- ) 2autoinc  rot  read-vram   read ;
-: store-color   ( src dest  #halves -- ) 2autoinc swap write-cram  write ;
-: fetch-color   ( src dest  #halves -- ) 2autoinc  rot  read-cram   read ;
-: store-vscroll ( src dest  #halves -- ) 2autoinc swap write-vsram write ;
-: fetch-vscroll ( src dest  #halves -- ) 2autoinc  rot  read-vsram  read ;
+: store-video   ( src dest  #halves -- ) swap write-vram  write ;
+: fetch-video   ( src dest  #halves -- )  rot  read-vram   read ;
+: store-color   ( src dest  #halves -- ) swap write-cram  write ;
+: fetch-color   ( src dest  #halves -- )  rot  read-cram   read ;
+: store-vscroll ( src dest  #halves -- ) swap write-vsram write ;
+: fetch-vscroll ( src dest  #halves -- )  rot  read-vsram  read ;
 
 : backcolor ( color -- ) 0 write-cram h>vdp ;
 

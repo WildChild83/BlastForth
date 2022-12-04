@@ -20,9 +20,9 @@
     abort  abs  align  aligned  allocate  allot  and  base  bin  bl  >body  bye
             cell+  cells  char  close-file  cmove  cmove>  compare
                         count  cr  create  create-file
-            d>s  decimal  depth  drop  2drop  dup  2dup  ?dup
+        d>s  decimal  defer  defer@  depth  drop  2drop  dup  2dup  ?dup
             emit  execute  false  find-name  free  here  hex  hold
-                    i  immediate  include  invert  j  k
+                    i  immediate  include  invert  is  j  k
             lshift  max  min  move  negate  nip  2nip  :noname
             off  on  or  over  2over  page  parse  parse-name  pick
     r/o  r/w  refill  roll  rot  2rot  rshift  s>d  space  spaces  swap  2swap
@@ -64,14 +64,15 @@
 : [']     no-int postpone [']     ; immediate
 : [char]  no-int postpone [char]  ; immediate
 : abort"  no-int postpone abort"  ; immediate
-: [IF]           postpone [IF]    ; immediate
-: [ELSE]         postpone [ELSE]  ; immediate
-: [THEN]         postpone [THEN]  ; immediate
-: [ENDIF]        postpone [THEN]  ; immediate
 
 : literal   no-int postpone literal  ; immediate
 : 2literal  no-int postpone 2literal ; immediate
 : postpone  no-int postpone postpone ; immediate
+
+: [IF]       postpone [IF]      ; immediate
+: [ELSE]     postpone [ELSE]    ; immediate
+: [THEN]     postpone [THEN]    ; immediate
+: [ENDIF]    postpone [THEN]    ; immediate
 
 : s" state @ if postpone s" exit endif [char] " parse ; immediate
 
