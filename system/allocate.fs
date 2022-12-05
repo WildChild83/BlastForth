@@ -1,6 +1,6 @@
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
-(       Memory Heap                                                            )
+(       Heaps of Memory                                                        )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
 
@@ -18,32 +18,33 @@ Forth definitions
 alignram 0 buffer: pad
 
 ( ---------------------------------------------------------------------------- )
-variable (nodeptr)
+hvariable (node)
 
-code ramaddr ( haddr -- addr ) -1 # d1 move, tos d1 h move, d1 tos move, next
+code ram ( haddr -- addr ) -1 # d1 move, tos d1 h move, d1 tos move, next
 
-: nodesize ( node -- u )     h@ ;
-: nextnode ( node -- node' ) half+ h@ ramaddr ;
+: nodesize  ( node -- u )         half+ h@ ;
+: nextnode  ( node -- node' )     h@ ram ;
+: ?lastnode ( node -- node flag ) h@ 0= ;
 
 : .node ( node -- )
     ." a=" dup $FFFF and hex.
-    ." n=" dup half+ h@  hex.
-    ." s=" h@ . ;
+    ." n=" dup h@ hex.
+    ." s=" nodesize . ;
 
 : init-memory ( -- )
-    $10000 pad $FFFF and - 16rotate $FFFC + (nodeptr) !
-    (nodeptr) nextnode off ;
+    $FFFC dup (node) h!
+    $10000 pad $FFFF and -   (node) nextnode ! ;
 
 ( ---------------------------------------------------------------------------- )
+: (alloc-find) ( u -- prev this u' )
+    half+ >r (node) dup nextnode
+    begin dup nodesize r@ < while
+        nip dup nextnode ?lastnode -59 and throw
+    repeat r> ;
+
 : allocate ( u -- addr )
-    half+ (nodeptr) begin dup nodesize third u< while nextnode repeat ( u this )
-    dup third - third over h! >r ( u this ) ( R: addr )
     
-    
-    
-    dup third - third over half- h! >r ( u this ) ( R: addr )
-    dup nodesize rot - half- over h! ( this ) ( R: addr )
-    r@ half- swap half+ h! r> ;
+;
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
