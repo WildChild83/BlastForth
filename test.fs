@@ -31,10 +31,10 @@ code do-something ( -- n ) tos push, $BABEFACE # tos move, next
     
     cr cr ." pad: " pad hex.
     
-    cr cr ." node ptr: " (node) nextnode .node
+    cr cr ." node ptr: " (node) hex. (node) nextnode .node
     
-    cr cr ." 100 alloc-find: " 
-    cr 100 (alloc-find) . ?lastnode .flag hex. hex.
+    cr cr ." 100 allocate: " 
+    cr 100 allocate . hex. hex.
     
     cr cr terminal-xy
         begin 2dup at-xy ." #frames: " #frames . cycles @ 8 = until
