@@ -136,7 +136,7 @@ code (is) ( xt -- )
 : ]find   ]name 2@ find-name ?dup if name>interpret execute exit endif ]number ;
 : ]parse   parse-name ?dup if ]name 2! ]find exit endif drop (refill) ;
 : ] ( -- ) host-only  state on   begin   ]parse   state @ not until ;
-: [ ( -- ) state off ;      aka ;end
+: [ ( -- ) state off ;
 }
 
 DEBUG [IF]

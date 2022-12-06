@@ -8,6 +8,7 @@
 (                                                                              )
 (       Dependencies:                                                          )
 (           - glossary.fs                                                      )
+(           - SizeOfROM must be defined                                        )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
 Host definitions
@@ -50,7 +51,7 @@ Forth definitions {
 Host definitions
 : freerom ( -- )
     rom @ free throw   rom off rom* off
-    cr depth if ." Stack Leak!!  " .s cr endif   bye ;
+    cr depth if ." STACK LEAK!  " .s cr endif ;
 
 Forth definitions {
 : printrom ( -- ) rom* @ rom @ 512 + ?do i c@ hex. loop cr freerom ;
@@ -61,7 +62,7 @@ Forth definitions {
         rom @ rom* @ over - r@ write-file throw
         r> close-file throw
     Verbose IF cr ." ROM file created: " type ." , " SizeOfROM .bytes THEN
-    freerom ;
+    freerom bye ;
 : romfile: ( "name" -- ) parse-name romfile ;
 : romfile" ( "name" -- ) [char] " parse romfile ;
 

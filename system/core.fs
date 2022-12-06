@@ -12,6 +12,9 @@
 (           - 68k.fs                                                           )
 (           - forth.fs                                                         )
 (                                                                              )
+(       TODO:                                                                  )
+(           - move                                                             )
+(                                                                              )
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
@@ -209,6 +212,30 @@ code ud>=       d1 pull, d2 pull, d3 pull, d1 d3 sub,
 
 code under+     tos [sp cell +] add, tos pull, next
 code under-     tos [sp cell +] sub, tos pull, next
+
+( ---------------------------------------------------------------------------- )
+(       Block Operations                                                       )
+( ---------------------------------------------------------------------------- )
+code cmove ( source dest length -- )
+    a2 pull, a1 pull, tos h dec, pos if
+    tos begin [a1]+ [a2]+ c move, loop endif tos pull, next
+
+code cmove> ( source dest length -- )
+    a2 pull, tos a2 h add, a1 pull, tos a1 h add, tos h dec, pos if
+    tos begin -[a1] -[a2] c move, loop endif tos pull, next
+
+code move ( source dest length -- ) next
+
+code fill ( addr length c -- )
+    d1 pull, z= if cell # sp add, tos pull, next, endif
+    a1 pull, a1 d2 move, 0 # d2 bittest, z<> if tos [a1]+ c move, d1 dec, endif
+    tos d2 c move, tos c rpush, tos h rpull,
+    d2 tos c move, tos d2 h move, tos swap, d2 tos h move,
+    2 # d1 ror, d1 h dec, pos if d1 begin tos [a1]+ move, loop endif
+    1 # d1 rol, cset if tos [a1]+ h move, endif
+    1 # d1 rol, cset if tos [a1]+ c move, endif tos pull, next
+
+: erase ( addr length -- ) 0 fill ;
 
 ( ---------------------------------------------------------------------------- )
 (       Flow Control Words                                                     )
