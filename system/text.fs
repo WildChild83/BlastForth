@@ -10,7 +10,7 @@
 (           - 68k.fs                                                           )
 (           - forth.fs                                                         )
 (           - core.fs                                                          )
-(           - vdp.fs                                                           )
+(           - video.fs                                                         )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
 Forth definitions
@@ -90,12 +90,12 @@ create glyph-data  bytes[
 ( ---------------------------------------------------------------------------- )
 cvalue  text-color-index
 
-rawcode (load-glyph-data) \ A1=vdp data, A2=glyph data, TOS=color index
+rawcode (load-glyph-data) \ A1=video data, A2=glyph data, TOS=color index
     7 d5 do [a2]+ d1 b move, 8 d4 do 1 # d1 b rol, 0 # d1 bittest, d2 z<> set?,
     tos d2 b and, 4 # d3 lsl, d2 d3 b or, loop d3 [a1] move, loop return, end
 
 code load-glyph-data ( vramaddr -- )
-    vdp-data [#] a1 lea, glyph-data [#] a2 lea, $8F02 # [a1 4 +] h move,
+    video-data [#] a1 lea, glyph-data [#] a2 lea, $8F02 # [a1 4 +] h move,
     2 # tos lsl, 2 # tos h lsr, $4000 # tos or, tos swap, tos [a1 4 +] move,    
     text-color-index [#] tos b move, 15 # tos b and, d7 clear,
     62 d6 do (load-glyph-data) subroutine, d7 [a1] move, loop
@@ -137,7 +137,7 @@ hvalue attributes   6 allot
 \ cursorY=attributes+2, cursorX=+3, yShift=+4, xMax=+5, vram-addr=+6
 
 code terminal ( vramaddr -- )
-    attributes [#] a1 lea, vdp-buffer [#] a2 lea,
+    attributes [#] a1 lea, video-config-buffer [#] a2 lea,
     tos [a1 6 +] h move, tos pull, [a2 16 +] d1 c move,
     3 # d1 c and, 6 # d1 c add, 9 # d1 c compare, d2 z= set?,
     d2 d1 c add, d1 [a1 4 +] c move, [a2 12 +] d1 c move, $81 # d1 c and,
@@ -162,9 +162,9 @@ code ?cr ( addr u -- )
 
 code (emit3) ( -- )
     attributes [#] a1 lea, [a1 3 +] d1 c move, d1 c inc, [a1 5 +] d1 c compare,
-    ^ cr gt primitive?, d1 [a1 3 +] c move, next
+    ' cr >body gt primitive?, d1 [a1 3 +] c move, next
 code (emit2) ( h vramaddr -- )
-    vdp-data [#] a1 lea, tos [a1 4 +] move, half # sp add,
+    video-data [#] a1 lea, tos [a1 4 +] move, half # sp add,
     [sp]+ [a1] h move, tos pull, next
 code (emit1) ( c -- h vramaddr )
     attributes [#] a1 lea, [a1] tos h add, tos push, tos clear, d1 clear,
@@ -179,6 +179,9 @@ synonym bl false        defer emit      defer type
 :  page         ( -- ) 0 0 at-xy ;
 :  space        ( -- ) bl emit ;
 :  spaces     ( n -- ) 0 max 0 ?do bl emit loop ;
+:  blank ( addr u -- ) bl erase ;
+
+: type.r ( addr u u -- ) over - spaces <type> ;
 
 : parse-token ( addr u c -- addr1 u1 addr2 u2 )
     >r begin over c@ r@ = over 0<> and while 1/string repeat
@@ -223,7 +226,7 @@ code hold ( c -- )
 code #> ( n -- addr u )
     (numbuffer) [#] a1 lea, [a1] d1 move,
     d1 push, a1 tos move, d1 tos sub, next
-code ##> ( d -- addr u ) cell # sp add, ^ #> primitive, end
+code ##> ( d -- addr u ) cell # sp add, ' #> >body primitive, end
 
 code (##) ( ud flag -- ud' )
     tos d4 move, tos pull, (numbuffer) [#] a1 lea,
@@ -248,6 +251,11 @@ code (##) ( ud flag -- ud' )
 :  u.  ( u -- )  ustring type space ;
 :  d.  ( d -- )  dstring type space ;
 : ud. ( ud -- ) udstring type space ;
+
+:   .r  ( n u -- ) >r   string r> type.r ;
+:  u.r  ( u u -- ) >r  ustring r> type.r ;
+:  d.r  ( d u -- ) >r  dstring r> type.r ;
+: ud.r ( ud u -- ) >r udstring r> type.r ;
 
 :  hex. ( u )  base @ >r hex <# #s 40 hold #> type space r> base ! ;
 : dhex. ( ud ) base @ >r ." $" hex swap <# #s drop #s #> type space r> base ! ;

@@ -44,7 +44,6 @@ Forth definitions
     does> ( .. -- ) compiling? if @ , else cell+ @ execute endif ; }
 
 { : ' ( "name" -- xt )   host-only ' >body @ ; }
-{ : ^ ( "name" -- addr ) host-only } ' { 4 + ; }
 
 ( ---------------------------------------------------------------------------- )
 (       Literals                                                               )
@@ -297,6 +296,12 @@ create +to2value&  doprim, asm
 ( ---------------------------------------------------------------------------- )
 code  interrupts ( -- ) $2300 # sr move, next
 code -interrupts ( -- ) $2700 # sr move, next
+
+code -interrupts[ ( -- ) ( R: -- int-sys )
+     sr d1 move, d1 h rpush, $2700 # sr move, next
+
+code ]-interrupts ( -- ) ( R: int-sys -- )
+    d1 h rpull, d1 sr move, next
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

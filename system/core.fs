@@ -73,6 +73,8 @@ Forth definitions
         [a2] tos move, d6 begin -[a2] -[a1] move, loop 4 # sp add, next
                                                     host/target: roll
 
+synonym >body cell+
+
 { :noname 1+ -2 and ; } anon tos inc, -2 # tos b and, next host/target: aligned
 
 PC: 'noop
@@ -224,7 +226,26 @@ code cmove> ( source dest length -- )
     a2 pull, tos a2 h add, a1 pull, tos a1 h add, tos h dec, pos if
     tos begin -[a1] -[a2] c move, loop endif tos pull, next
 
-code move ( source dest length -- ) next
+code move ( source dest length -- )
+    tos test, z= if 2 cells # sp add, tos pull, next, endif
+    a2 pull, a1 pull, a2 d2 h move, a1 d1 h move, d2 d1 h xor,
+    0 # d1 bittest, z<> if
+        a1 a2 compare, ult if tos h dec, tos begin [a1]+ [a2]+ c move, loop
+        else tos a1 h add, tos a2 h add,
+             tos h dec, tos begin -[a1] -[a2] c move, loop
+        endif tos pull, next, endif
+    a1 a2 compare, ult if
+        0 # d2 bittest, z<> if [a1]+ [a2]+ c move, tos dec, endif
+        2 # tos ror, tos h dec, pos if tos begin [a1]+ [a2]+ move, loop endif
+        1 # tos rol, cset if [a1]+ [a2]+ h move, endif
+        1 # tos rol, cset if [a1]+ [a2]+ c move, endif
+    else
+        tos a1 add, tos a2 add, a2 d2 h move,
+        0 # d2 bittest, z<> if -[a1] -[a2] c move, tos dec, endif
+        2 # tos ror, tos h dec, pos if tos begin -[a1] -[a2] move, loop endif
+        1 # tos rol, cset if -[a1] -[a2] h move, endif
+        1 # tos rol, cset if -[a1] -[a2] c move, endif
+    endif tos pull, next
 
 code fill ( addr length c -- )
     d1 pull, z= if cell # sp add, tos pull, next, endif
@@ -279,7 +300,7 @@ code (of?)      d1 h read, tos test, z= if d1 tp h add, tos pull, next, endif
 
 ( ---------------------------------------------------------------------------- )
 code   (do)     [sp]+ -[rp] move, tos rpush, tos pull, next
-code  (?do)     d1 h read, [sp] tos compare, ^ (do) displacement z<> branch?,
+code  (?do)     d1 h read, [sp] tos compare, ' (do) >body z<> primitive?,
                 d1 tp h add, 4 # sp add, tos pull, next
 code  (loop)    d1 h read, d2 rpull, d2 inc, [rp] d2 compare,
                 z<> if d1 tp h add, d2 rpush, next, endif 4 # rp add, next
@@ -347,7 +368,7 @@ code tp!    tos tp move, tos pull, next
 code np@    tos push, np tos move, next
 code np!    tos np move, tos pull, next
 
-alignram ReturnStackSize buffer: (rp-limit)    0 buffer: (rp-empty)
+alignram ReturnStackSize buffer: (rp-limit)     0 buffer: (rp-empty)
 
 code rdepth tos push, (rp-empty) # tos move, rp tos sub, 2 # tos asr, next
 

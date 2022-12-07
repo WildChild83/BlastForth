@@ -11,6 +11,9 @@
 (           - forth.fs                                                         )
 (           - core.fs                                                          )
 (                                                                              )
+(       TODO:                                                                  )
+(           - make resize not dumb                                             )
+(                                                                              )
 ( ---------------------------------------------------------------------------- )
 Forth definitions
 
@@ -22,6 +25,8 @@ code ram ( haddr -- addr ) -1 # d1 move, tos d1 h move, d1 tos move, next
 
 8 { make (alloc-minimum) }
 
+16 cells constant pad-size
+
 : nodesize  ( node -- u )         cell- h@ ;
 : nextnode  ( node -- node' )     half- h@ ram ;
 : ?lastnode ( node -- node flag ) dup half- h@ 0= ;
@@ -30,7 +35,7 @@ code ram ( haddr -- addr ) -1 # d1 move, tos d1 h move, d1 tos move, next
 : !node ( next size node -- ) tuck cell- h! half- h! ;
 : !next ( next node -- ) half- h! ;
 
-: init-memory ( -- ) -2 dup dup h! pad - 16 lshift -6 ! ;
+: init-memory ( -- ) -2 dup dup h! pad pad-size + - 16 lshift -6 ! ;
 
 : .freelist ( -- )
     0 begin ?lastnode not while
@@ -38,7 +43,7 @@ code ram ( haddr -- addr ) -1 # d1 move, tos d1 h move, d1 tos move, next
     repeat drop ;
 
 ( ---------------------------------------------------------------------------- )
-code allocate ( u -- addr eor )
+code allocate ( u -- addr ior )
     (alloc-minimum) # tos h compare, ult if (alloc-minimum) # tos move, endif
     3 # tos h add, -2 # tos b and, a1 clear, -1 # d1 move, begin 
         [a1 -2 +] d1 h move, z= if tos push, -59 # tos move, next, endif
@@ -50,7 +55,7 @@ code allocate ( u -- addr eor )
         a2 [a1 -2 +] h move, endif
     2 # tos h sub, tos [a2]+ h move, a2 push, tos clear, next
 
-code free ( addr -- eor )
+code free ( addr -- ior )
     a1 clear, -1 # d3 move, begin
         [a1 -2 +] d3 h move, z= if tos push, -60 # tos move, next, endif
         d3 tos h compare, ult while d3 a1 move, repeat
@@ -69,6 +74,14 @@ code allocation ( addr -- u )
 code free-memory ( -- u )
     tos push, tos clear, a1 clear, -1 # d1 move, begin
     [a1 -2 +] d1 h move, z<> while d1 a1 move, [a1 -4 +] tos h add, repeat next
+
+: resize ( addr1 u -- addr2 ior )
+    -interrupts[
+        swap dup allocation over 2>r
+        free if 2rdrop ]-interrupts -16 exit endif
+        dup allocate if 2rdrop ]-interrupts nip -16 exit endif
+        r> rot third r> rot min move
+    ]-interrupts 0 ;
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

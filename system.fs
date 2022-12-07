@@ -3,6 +3,8 @@
 (       Blast Forth's Root File                                                )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
+.( BlastForth version 0.00 )
+
 include system/glossary.fs
 
 ( ---------------------------------------------------------------------------- )
@@ -36,6 +38,12 @@ false make FloatStack
  64 bytes make ReturnStackSize
  64 bytes make FloatStackSize
  32 bytes make ExceptionStackSize
+
+\ DMA operations are queued up in system RAM and executed during the next
+\   vertical blank.  Each operation occupies 14 bytes of RAM.  This value
+\   determines how many operations can be queued up simultaneously.
+\   Must be at least 1.
+16 make DMAQueueSize
 
 \ Forth environments traditionally perform "floored" division, but the 68k CPU
 \   only provides "symmetric" division.  If you don't know the difference then
@@ -71,7 +79,7 @@ include system/romfile.fs       Forth definitions
 ( Countries )    ascii" JUE             "
 
 \ Warn if header is the wrong size (comment this line to disable the warning)
-romspace { 512 bytes <> } [IF] .( Incorrect Sega ROM Header. ) [THEN]
+romspace { 512 bytes <> } [IF] { cr } .( Incorrect Sega ROM Header. ) [THEN]
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
@@ -116,11 +124,12 @@ FloatStack [IF]     \ If using floats, uncomment one and ONLY one of these:
 (       System Modules                                                         )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
-include system/vdp.fs           \ video display processor
+include system/video.fs         \ video display processor
 include system/text.fs          \ text display, terminal output
 include system/interrupts.fs    \ vertical and horizontal blank handlers
 include system/exceptions.fs    \ default exception handlers
 include system/allocate.fs      \ dynamic memory manager
+include system/strings.fs       \ dynamic strings
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
@@ -151,11 +160,11 @@ create default-palette
 
 : init-video \ this word will be invoked during system start-up
     (init-video-config)     2 autoinc 
-    $C000 planeA        $B800 spritePlane       +h320  +v224  +ntsc
+    $C000 planeA        $B800 spritePlane       +h320  +v224
     $E000 planeB        $BC00 hScrollTable      64x64planes
     $B000 windowPlane     255 hbi-counter       
-    !video
-    default-palette $00 16 store-color ;
+    set-video
+    default-palette $00 16 >cram ;
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )

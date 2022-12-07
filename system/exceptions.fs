@@ -94,12 +94,12 @@ code (<exit>) tp rpull, next
 
 : (crash-system) ( sp  rp  throw-code -- )
     ['] (<exit>) is exit
-    begin vdp-dma? not until
-    2 autoinc $0000 write-vram 64 kilobytes cell/ 0 do 0 >vdp loop
+    begin dma? not until
+    2 autoinc $0000 write-vram 64 kilobytes cell/ 0 do 0 !video loop
     (init-video-config)
-    2 autoinc $C000 planeA $E000 planeB +h320 +v224 +ntsc
-    64x64planes 255 hbi-counter !video
-    $00 write-cram $0000 h>vdp $0EEE h>vdp
+    2 autoinc $C000 planeA $E000 planeB +h320 +v224
+    64x64planes 255 hbi-counter set-video
+    $00 write-cram $0000 h!video $0EEE h!video
     1 to text-color-index    $0000 load-glyph-data     ['] <emit> is emit
     0 to attributes          planeA> terminal page     ['] <type-words> is type
     +video
@@ -127,23 +127,23 @@ code (<exit>) tp rpull, next
 
 ( ---------------------------------------------------------------------------- )
 code crash-system ( throwcode -- )
-    $2700 # sr move, $8104 # vdp-ctrl [#] h move,
+    $2700 # sr move, $8104 # video-ctrl [#] h move,
     $FFFFF0 [#] rp lea, [rp -128 +] sp lea, next& [#] np lea,
     ' (crash-system) execute, end
 
 ( ---------------------------------------------------------------------------- )
 code <exit>
     rp d1 move, (rp-empty) $FFFF and # d1 h compare,
-        ugt= if tos push, -6 # tos move, ^ crash-system primitive, endif
+        ugt= if tos push, -6 # tos move, ' crash-system >body primitive, endif
     sp d1 move, (sp-empty) $FFFF and # d1 h compare,
-         ugt if -4 # tos move, ^ crash-system primitive, endif
+         ugt if -4 # tos move, ' crash-system >body primitive, endif
     (sp-limit) $FFFF and # d1 h compare,
-         ult if -3 # tos move, ^ crash-system primitive, endif
+         ult if -3 # tos move, ' crash-system >body primitive, endif
     FloatStack [IF]
         fp d1 move, (fp-empty) $FFFF and # d1 h compare,
-            ugt= if -45 # tos move, ^ crash-system primitive, endif
+            ugt= if -45 # tos move, ' crash-system >body primitive, endif
         (fp-limit) $FFFF and # d1 h compare,
-            ult= if -44 # tos move, ^ crash-system primitive, endif
+            ult= if -44 # tos move, ' crash-system >body primitive, endif
     [THEN]
     tp rpull, next
 

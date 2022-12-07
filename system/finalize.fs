@@ -12,7 +12,7 @@ Verbose [IF] cr .( Finalizing... ) [THEN]
 (       allocate.fs                                                            )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
-ramspace @ } ^ pad { romh!      \ set value of "pad"
+ramspace @ } ' pad >body { romh!      \ set value of "pad"
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
@@ -28,7 +28,7 @@ Forth definitions
 
     \ disable CPU interrupts
     $2700 # sr move,
-    
+
     \ Trademark Security System check
     $A10000 [#] a1 lea,
     [a1 $8 +] test, z= if
@@ -57,7 +57,7 @@ Forth definitions
     init-audio
 
     \ video hardware
-    begin vdp-dma? not until init-video
+    begin dma? not until init-video
     
     \ Forth environment
     init-exceptions   0 to #frames   decimal

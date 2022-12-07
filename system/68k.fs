@@ -201,7 +201,8 @@ $4000 single: negx,     $4400 single: neg,      $4600 single: not,
     >r 2arg #s' <> if r> (data) exit endif
     nip <status> 0 r> (and2) opsize+ imm, clean ;
 : xor, ( arg1 arg2 -- )
-    2arg dd' = if swap sdreg $B100 + opsize+ h, exit endif (status) ;  aka eor,
+    2arg dd' = if swap sdreg $B100 + opsize+ h, clean exit endif
+    (status) ;      aka eor,
 
 : logic: ( opcode "name" -- ) create host, does> ( arg1 arg2 -- )
     @ >r 2arg md' = if nip dreg r> (and1) ea, clean exit endif r> (status) ;
