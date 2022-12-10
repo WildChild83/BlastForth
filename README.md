@@ -22,7 +22,7 @@ Definitions surrounded by `{ }` (curly braces) execute immediately on the host m
 
 "Host" machine refers to the desktop or laptop PC you write your programs with.  The "target" machine is the Sega Genesis/Megadrive.  Since BlastForth is a *cross-compiler* for a ROM-based system, it must distinguish between "compile time" and "run time" like a conventional compiler (native Forths do not typically make this distinction).
 
-The M68000 CPU supports only 16-bit *symmetric* division.  BlastForth's standard division operators (`/`, `/mod`, etc.) use a software fallback routine if the divisor doesn't fit in 16 bits.  You can use the half-cell division operators (`h/`, `h/mod`, etc.) to force the use of hardware division, in which case an exception will be thrown if the divisor is too large.  Your project's settings determine whether the compiler uses "symmetric" or "floored" division, with symmetric being the default.
+The M68000 CPU supports only 16-bit *symmetric* division.  BlastForth's standard division operators (`/`, `/mod`, etc.) use a software fallback routine if the divisor doesn't fit in 16 bits.  The Project Settings determine whether the compiler defaults to "symmetric" or "floored" division, with symmetric being the default.
 
 Words enclosed in parentheses `( )`, such as `(init-video-config)`, are for internal use and should not be directly used in your code.
 
