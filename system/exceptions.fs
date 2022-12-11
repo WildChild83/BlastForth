@@ -104,7 +104,7 @@ code (<exit>) tp rpull, next
     0 to attributes          planeA> terminal page     ['] <type-words> is type
     +video
     
-    dup exception>string type    
+    cr cr dup exception>string type    
     cr cr ." Throw Code:" .
 
     (eptrs)

@@ -77,13 +77,11 @@ synonym >body cell+
 
 { :noname 1+ -2 and ; } anon tos inc, -2 # tos b and, next host/target: aligned
 
-PC: 'noop
+create donoop& PC: 'noop
 { :noname ; }   anon next   host/target: noop       aka chars   aka bytes
 
 { :noname 10 lshift ; }
 anon 10 # d1 move, d1 tos lsl, next                 host/target: kilobytes
-
-create donoop& asm next
 
 ( ---------------------------------------------------------------------------- )
 (       Dumb Words  [aka "compile-only"]                                       )
@@ -126,7 +124,7 @@ code  >r        tos rpush, tos  pull, next
 code  r>        tos  push, tos rpull,  next
 code 2>r        [sp]+ rpush, tos rpush, tos pull, next
 code 2r@        tos push, tos rpeek, [rp cell +] push, next
-code 2r>        tos push, tos pull, -[sp] rpull, next
+code 2r>        tos push, tos rpull, -[sp] rpull, next
 code  i         tos push, tos rpeek, next                   aka r@
 code  i'        tos push, [rp   cell  +] tos move, next     aka rsecond
 code  j         tos push, [rp 2 cells +] tos move, next     aka rthird

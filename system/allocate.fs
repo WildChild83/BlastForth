@@ -37,11 +37,6 @@ code ram ( haddr -- addr ) -1 # d1 move, tos d1 h move, d1 tos move, next
 
 : init-memory ( -- ) -2 dup dup h! pad pad-size + - 16 lshift -6 ! ;
 
-: .freelist ( -- )
-    0 begin ?lastnode not while
-        nextnode cr ." addr=" dup $FFFF and hex. ." size=" dup nodesize hex.
-    repeat drop ;
-
 ( ---------------------------------------------------------------------------- )
 code allocate ( u -- addr ior )
     (alloc-minimum) # tos h compare, ult if (alloc-minimum) # tos move, endif

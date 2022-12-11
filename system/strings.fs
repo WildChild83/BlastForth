@@ -32,6 +32,8 @@ code $@ ( $addr -- addr u )
 
 code $@len ( $addr -- u ) tos a1 move, [a1] a1 move, [a1] tos move, next
 
+
+
 : $. ( $addr -- ) $@ type ;
 
 ( ---------------------------------------------------------------------------- )

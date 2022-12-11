@@ -43,7 +43,7 @@ false make FloatStack
 \   vertical blank.  Each operation occupies 14 bytes of RAM.  This value
 \   determines how many operations can be queued up simultaneously.
 \   Must be at least 1.
-16 make DMAQueueSize
+16 make DMAQueueItems
 
 \ Forth environments traditionally perform "floored" division, but the 68k CPU
 \   only provides "symmetric" division.  If you don't know the difference then
@@ -124,12 +124,13 @@ FloatStack [IF]     \ If using floats, uncomment one and ONLY one of these:
 (       System Modules                                                         )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
+include system/interrupts.fs    \ vertical and horizontal blank handlers
+include system/allocate.fs      \ dynamic memory manager
 include system/video.fs         \ video display processor
 include system/text.fs          \ text display, terminal output
-include system/interrupts.fs    \ vertical and horizontal blank handlers
 include system/exceptions.fs    \ default exception handlers
-include system/allocate.fs      \ dynamic memory manager
 include system/strings.fs       \ dynamic strings
+include system/input.fs         \ read controllers
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
@@ -164,7 +165,7 @@ create default-palette
     $E000 planeB        $BC00 hScrollTable      64x64planes
     $B000 windowPlane     255 hbi-counter       
     set-video
-    default-palette $00 16 >cram ;
+    default-palette $00 16 move>color ;
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )

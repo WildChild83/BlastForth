@@ -57,8 +57,9 @@ Forth definitions
     init-audio
 
     \ video hardware
-    begin dma? not until init-video
-    
+    begin dma? not until  -video  clear-vram  init-video  init-dma
+    ['] noop dup  is (scrollX)  is (scrollY)
+
     \ Forth environment
     init-exceptions   0 to #frames   decimal
     init-memory
