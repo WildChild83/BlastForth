@@ -56,10 +56,10 @@ code free ( addr -- ior )
         d3 tos h compare, ult while d3 a1 move, repeat
     tos a2 move, d2 clear, -[a2] d2 h move, 2 # d2 h add, d2 a2 add,
     0 # a1 h compare, z<> if
-        d1 clear, [a1 -4 +] d1 h move, [a2 d1+ 0] a3 lea, a3 a1 compare,
+        d1 clear, [a1 -4 +] d1 h move, [a2 d1+ 0] a3 address, a3 a1 compare,
         z= if a1 a2 move, d1 d2 h add, else { 2swap }
     endif a2 [a1 -2 +] h move, endif
-    d3 a3 move, [a3 d2+ 0] a1 lea, a1 a2 compare,
+    d3 a3 move, [a3 d2+ 0] a1 address, a1 a2 compare,
     z= if [a3 -2 +] [a2 -2 +] h move, [a3 -4 +] d2 h add,
     else a3 [a2 -2 +] h move, endif d2 [a2 -4 +] h move, tos clear, next
 

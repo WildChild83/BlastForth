@@ -69,7 +69,8 @@ Forth definitions
                     [sp tos+ 0] tos move, next      host/target: pick
 { ' roll }
     anon tos test, z= if tos pull, next, endif
-        tos d1 move, 2 # tos lsl, [sp tos+ 4 +] a1 lea, [a1 -4 +] a2 lea,
+        tos d1 move, 2 # tos lsl,
+        [sp tos+ 4 +] a1 address, [a1 -4 +] a2 address,
         [a2] tos move, d6 begin -[a2] -[a1] move, loop 4 # sp add, next
                                                     host/target: roll
 
@@ -89,8 +90,8 @@ anon 10 # d1 move, d1 tos lsl, next                 host/target: kilobytes
 code   @        tos a1 move, [a1] tos move, next
 code  h@        tos a1 move, tos clear, [a1] tos h move, next
 code  c@        tos a1 move, tos clear, [a1] tos c move, next
-code sh@        tos a1 move, [a1] tos h move, tos ext, next
-code sc@        tos a1 move, [a1] tos c move, tos extb, next
+code sh@        tos a1 move, [a1] tos h move, tos   extend, next
+code sc@        tos a1 move, [a1] tos c move, tos c extend, next
 code   !        tos a1 move, [sp]+ [a1] move, tos pull, next
 code  h!        tos a1 move, 2 # sp add, [sp]+ [a1] h move, tos pull, next
 code  c!        tos a1 move, 3 # sp add, [sp]+ [a1] c move, tos pull, next
@@ -156,7 +157,7 @@ code dlshift
     d1 pull, d2 pull, -1 # d3 move, tos d1 lsl, tos d2 rol, tos d3 lsl,
     d3 tos move, tos not, d2 tos and, d1 tos or, d3 d2 and, d2 push, next
 code drshift
-    31 # tos cmp, gt if 32 # tos sub, d1 pull, 4 # sp add,
+    31 # tos compare, gt if 32 # tos sub, d1 pull, 4 # sp add,
         tos d1 lsr, d1 push, tos clear, next, endif
     d1 pull, d2 pull, -1 # d3 move, tos d1 ror, tos d2 lsr, tos d3 lsr,
     d3 tos move, d1 tos and, d3 not, d3 d1 and, d1 d2 or, d2 push, next
@@ -168,47 +169,47 @@ code umax       d1 pull, d1 tos compare, ult if d1 tos move, endif next
 code  min       d1 pull, d1 tos compare,  gt if d1 tos move, endif next
 code  max       d1 pull, d1 tos compare,  lt if d1 tos move, endif next
 
-code 0=         tos test, tos  z=  set?, tos extb, next   aka not
-code 0<>        tos test, tos  z<> set?, tos extb, next   aka flag
-code 0<         tos test, tos  lt  set?, tos extb, next
-code 0<=        tos test, tos  lt= set?, tos extb, next
-code 0>         tos test, tos  gt  set?, tos extb, next
-code 0>=        tos test, tos  gt= set?, tos extb, next
-code   =        [sp]+ tos compare, tos  z=  set?, tos extb, next
-code  <>        [sp]+ tos compare, tos  z<> set?, tos extb, next
-code  >         [sp]+ tos compare, tos  lt  set?, tos extb, next
-code  >=        [sp]+ tos compare, tos  lt= set?, tos extb, next
-code  <         [sp]+ tos compare, tos  gt  set?, tos extb, next
-code  <=        [sp]+ tos compare, tos  gt= set?, tos extb, next
-code u>         [sp]+ tos compare, tos ult  set?, tos extb, next
-code u>=        [sp]+ tos compare, tos ult= set?, tos extb, next
-code u<         [sp]+ tos compare, tos ugt  set?, tos extb, next
-code u<=        [sp]+ tos compare, tos ugt= set?, tos extb, next
+code 0=         tos test, tos  z=  set?, tos c extend, next   aka not
+code 0<>        tos test, tos  z<> set?, tos c extend, next   aka flag
+code 0<         tos test, tos  lt  set?, tos c extend, next
+code 0<=        tos test, tos  lt= set?, tos c extend, next
+code 0>         tos test, tos  gt  set?, tos c extend, next
+code 0>=        tos test, tos  gt= set?, tos c extend, next
+code   =        [sp]+ tos compare, tos  z=  set?, tos c extend, next
+code  <>        [sp]+ tos compare, tos  z<> set?, tos c extend, next
+code  >         [sp]+ tos compare, tos  lt  set?, tos c extend, next
+code  >=        [sp]+ tos compare, tos  lt= set?, tos c extend, next
+code  <         [sp]+ tos compare, tos  gt  set?, tos c extend, next
+code  <=        [sp]+ tos compare, tos  gt= set?, tos c extend, next
+code u>         [sp]+ tos compare, tos ult  set?, tos c extend, next
+code u>=        [sp]+ tos compare, tos ult= set?, tos c extend, next
+code u<         [sp]+ tos compare, tos ugt  set?, tos c extend, next
+code u<=        [sp]+ tos compare, tos ugt= set?, tos c extend, next
 
-code  d0=       [sp]+ tos or, tos z=  set?, tos extb, next
-code  d0<>      [sp]+ tos or, tos z<> set?, tos extb, next
-code  d0<       tos test, tos  lt  set?, tos extb, cell # sp add, next
-code  d0>=      tos test, tos  gt= set?, tos extb, cell # sp add, next
+code  d0=       [sp]+ tos or, tos z=  set?, tos c extend, next
+code  d0<>      [sp]+ tos or, tos z<> set?, tos c extend, next
+code  d0<       tos test, tos  lt  set?, tos c extend, cell # sp add, next
+code  d0>=      tos test, tos  gt= set?, tos c extend, cell # sp add, next
 code  d=        d1 pull, [sp]+ tos sub, [sp]+ d1 sub,
-                d1 tos or, tos z=  set?, tos extb, next
+                d1 tos or, tos z=  set?, tos c extend, next
 code  d<>       d1 pull, [sp]+ tos sub, [sp]+ d1 sub,
-                d1 tos or, tos z<> set?, tos extb, next
+                d1 tos or, tos z<> set?, tos c extend, next
 code  d<        d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos  lt  set?, tos extb, next
+                tos d2 subx, tos  lt  set?, tos c extend, next
 code  d<=       d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos  lt= set?, tos extb, next
+                tos d2 subx, tos  lt= set?, tos c extend, next
 code  d>        d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos  gt  set?, tos extb, next
+                tos d2 subx, tos  gt  set?, tos c extend, next
 code  d>=       d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos  gt= set?, tos extb, next
+                tos d2 subx, tos  gt= set?, tos c extend, next
 code ud<        d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos ult  set?, tos extb, next
+                tos d2 subx, tos ult  set?, tos c extend, next
 code ud<=       d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos ult= set?, tos extb, next
+                tos d2 subx, tos ult= set?, tos c extend, next
 code ud>        d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos ugt  set?, tos extb, next
+                tos d2 subx, tos ugt  set?, tos c extend, next
 code ud>=       d1 pull, d2 pull, d3 pull, d1 d3 sub,
-                tos d2 subx, tos ugt= set?, tos extb, next
+                tos d2 subx, tos ugt= set?, tos c extend, next
 
 code under+     tos [sp cell +] add, tos pull, next
 code under-     tos [sp cell +] sub, tos pull, next
@@ -227,19 +228,19 @@ code cmove> ( source dest length -- )
 code move ( source dest length -- )
     tos test, z= if 2 cells # sp add, tos pull, next, endif
     a2 pull, a1 pull, a2 d2 h move, a1 d1 h move, d2 d1 h xor,
-    0 # d1 bittest, z<> if
+    0 # d1 test-bit, z<> if
         a1 a2 compare, ult if tos h dec, tos begin [a1]+ [a2]+ c move, loop
         else tos a1 h add, tos a2 h add,
              tos h dec, tos begin -[a1] -[a2] c move, loop
         endif tos pull, next, endif
     a1 a2 compare, ult if
-        0 # d2 bittest, z<> if [a1]+ [a2]+ c move, tos dec, endif
+        0 # d2 test-bit, z<> if [a1]+ [a2]+ c move, tos dec, endif
         2 # tos ror, tos h dec, pos if tos begin [a1]+ [a2]+ move, loop endif
         1 # tos rol, cset if [a1]+ [a2]+ h move, endif
         1 # tos rol, cset if [a1]+ [a2]+ c move, endif
     else
         tos a1 add, tos a2 add, a2 d2 h move,
-        0 # d2 bittest, z<> if -[a1] -[a2] c move, tos dec, endif
+        0 # d2 test-bit, z<> if -[a1] -[a2] c move, tos dec, endif
         2 # tos ror, tos h dec, pos if tos begin -[a1] -[a2] move, loop endif
         1 # tos rol, cset if -[a1] -[a2] h move, endif
         1 # tos rol, cset if -[a1] -[a2] c move, endif
@@ -247,7 +248,7 @@ code move ( source dest length -- )
 
 code fill ( addr length c -- )
     d1 pull, z= if cell # sp add, tos pull, next, endif
-    a1 pull, a1 d2 move, 0 # d2 bittest, z<> if tos [a1]+ c move, d1 dec, endif
+    a1 pull, a1 d2 move, 0 # d2 test-bit, z<> if tos [a1]+ c move, d1 dec, endif
     tos d2 c move, tos c rpush, tos h rpull,
     d2 tos c move, tos d2 h move, tos swap, d2 tos h move,
     2 # d1 ror, d1 h dec, pos if d1 begin tos [a1]+ move, loop endif
@@ -376,7 +377,7 @@ code rdepth tos push, (rp-empty) # tos move, rp tos sub, 2 # tos asr, next
 ExceptionStackSize buffer: (estack-limit)   hvariable (estack)
 
 rawcode (throw) \ TOS=throw code (must be non-zero)
-    (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
+    (estack) [#] a3 address, -1 # d1 move, [a3] d1 h move, d1 a1 move,
     [a1]+ d1 h move, d1 sp move, [a1]+ d1 h move, d1 rp move,
     a1 [a3] h move, tp rpull, next
 
@@ -384,20 +385,20 @@ Assembler definitions  { : throw-primitive,  (throw) primitive, ; }
 Forth definitions
 
 code (epush) ( -- )
-    (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, 
+    (estack) [#] a3 address, -1 # d1 move, [a3] d1 h move, 
     DEBUG [IF]
         (estack-limit) $FFFF and # d1 h compare,
         ult= if tos push, -53 # tos move, throw-primitive, endif
     [THEN]
     d1 a1 move, rp -[a1] h move, sp -[a1] h move, a1 [a3] h move, next
 code (epop) ( -- )
-    (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
+    (estack) [#] a3 address, -1 # d1 move, [a3] d1 h move, d1 a1 move,
     DEBUG [IF]
         [a1] d1 h move, sp [a1]+ h move, d1 sp move,
         [a1] d1 h move, rp [a1]+ h move, d1 rp move,
     [ELSE] [a1]+ d1 h move, d1 sp move, [a1]+ d1 h move, d1 rp move, [THEN]
     a1 [a3] h move, next
-code (edrop) ( -- ) (estack) [#] a3 lea, cell # [a3] h add, next
+code (edrop) ( -- ) (estack) [#] a3 address, cell # [a3] h add, next
 
 : catch ( xt -- ) (epush) execute (edrop) 0 ;
 : throw  ( n -- ) ?if (epop) endif ;
@@ -411,7 +412,7 @@ DEBUG [IF]
         ult= if tos push, -5 # tos move, throw-primitive, endif
         tp rpush, dfa tp move, next
     code (eptrs) ( -- sp rp )
-        (estack) [#] a3 lea, -1 # d1 move, [a3] d1 h move, d1 a1 move,
+        (estack) [#] a3 address, -1 # d1 move, [a3] d1 h move, d1 a1 move,
         tos push, [a1 -4 +] d1 h move, d1 push,
         [a1 -2 +] d1 h move, d1 tos move, next
 [THEN]
@@ -445,7 +446,7 @@ code demux  tos d1 move, [sp]  tos and, d1 not, d1 [sp]  and, next
 code bounds d1 peek, tos [sp] add, d1 tos move, next
 
 code within d1 pull, d1 tos sub, d2 pull, d1 d2 sub,
-            d2 tos compare, tos ugt set?, tos extb, next
+            d2 tos compare, tos ugt set?, tos c extend, next
 
 ( ---------------------------------------------------------------------------- )
 code ms ( n -- )

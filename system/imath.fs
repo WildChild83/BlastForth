@@ -49,7 +49,7 @@ rawcode (32/32) \ TOS=divisor, D1=dividend, quotient=D2, modulus=D3
     begin 1 # d1 lsl, 1 # d3 roxl, d4 h dec, d3 tos compare, ult= until
     1 # d3 lsr, 1 # d1 roxr,
     d4 begin 1 # d1 lsl, 1 # d3 roxl, d3 d5 move, tos d5 sub,
-             1 # d2 roxl, 0 # d2 bitchg, z= if d5 d3 move, endif loop
+             1 # d2 roxl, 0 # d2 change-bit, z= if d5 d3 move, endif loop
     return, end
 code u/mod ( u1 u2 -- mod quot )
     d1 pull, $10000 # tos compare, ult if
@@ -60,15 +60,15 @@ code /mod ( n1 n2 -- mod quot )
     d1 pull, tos d2 move, $8000 # d2 add, $FFFF0000 # d2 and, z= if
         tos d2 h move, tos d1 divs, d1 tos h move, d1 swap, d1 h test,
         z<> if tos h test, neg if tos h dec, d2 d1 h add, endif endif
-        tos ext, d1 ext, d1 push, next, endif
+        tos extend, d1 extend, d1 push, next, endif
     tos d6 move, neg if tos neg, endif d1 d7 move, neg if d1 neg, endif
     (32/32) subroutine, d6 test, neg if d3 neg, endif d6 d7 xor,
     neg if d2 neg, d3 test, z<> if d2 dec, d3 neg, d6 d3 add, endif endif
     d3 push, d2 tos move, next
 code /rem ( n1 n2 -- rem quot )
     d1 pull, tos d2 move, $8000 # d2 add, $FFFF0000 # d2 and, z= if
-        tos d1 divs, d1 tos h move, tos ext,
-        d1 swap, d1 ext, d1 push, next, endif
+        tos d1 divs, d1 tos h move, tos extend,
+        d1 swap, d1 extend, d1 push, next, endif
     tos d6 move, neg if tos neg, endif d1 d7 move, neg if d1 neg, endif
     (32/32) subroutine, d7 d6 xor, neg if d2 neg, endif
     d7 test, neg if d3 neg, endif d3 push, d2 tos move, next
@@ -95,7 +95,7 @@ rawcode (64/32) \ TOS=divisor, D2:D1=dividend, quotient=D3, modulus=D4
         ult= until
     1 # d4 lsr, 1 # d2 roxr, 1 # d1 roxr,
     d5 begin 1 # d1 lsl, 1 # d2 roxl, 1 # d4 roxl, d4 d6 move, tos d6 sub,
-             1 # d3 roxl, 0 # d3 bitchg, z= if d6 d4 move, endif loop
+             1 # d3 roxl, 0 # d3 change-bit, z= if d6 d4 move, endif loop
     return, end
 code um/mod ( udlo udhi u -- mod quot )
     d2 pull, d1 pull, (64/32) subroutine, d4 push, d3 tos move, next
@@ -126,7 +126,7 @@ FlooredDivision [IF] synonym / /f  synonym */ */f
 ( ---------------------------------------------------------------------------- )
 (       Roots and Powers                                                       )
 ( ---------------------------------------------------------------------------- )
-create (ilog2-table) bytes[
+create (log2-table) bytes[
    -1 0 1 1 2 2 2 2 3 3 3 3 3 3 3 3 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4
     5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5
     6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6
@@ -136,30 +136,30 @@ create (ilog2-table) bytes[
     7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7
     7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 ]
 
-code ilog2 ( u -- u' )
-    (ilog2-table) [#] a1 lea, tos d1 move, d1 swap, d1 h test,
+code log2 ( u -- u' )
+    (log2-table) [#] a1 address, tos d1 move, d1 swap, d1 h test,
     z<> if d1 d2 h move, 8 # d2 h lsr, d2 h test, z<> if
             d2 a1 h add, 24 # tos move, else d1 a1 w add, 16 # tos move, endif
      else tos d1 h move, 8 # d1 h lsr, d1 h test, z<> if
             d1 a1 h add, 8 # tos move, else tos a1 h add, tos clear, endif
-    endif [a1] tos b add, tos extb, next
+    endif [a1] tos b add, tos c extend, next
 
-create (ilog10-table) cells[
+create (log10-table) cells[
     1 10 100 1000 10000 100000 1000000 10000000 100000000 1000000000 ]
 
-code (ilog10) ( u log2 -- u' )
+code (log10) ( u log2 -- u' )
     tos h inc, 1233 # tos mulu, 4 # tos lsl, tos h clear,
     tos swap, tos d1 move, d1 d1 h add, d1 d1 h add, d1 a1 h move,
-    [a1 (ilog10-table) +] d1 move, [sp]+ d1 compare,
+    [a1 (log10-table) +] d1 move, [sp]+ d1 compare,
     gt if tos h dec, endif next
-: ilog10 ( u -- u' ) dup ilog2 (ilog10) ;
+: log10 ( u -- u' ) dup log2 (log10) ;
 
-code iroot2 ( u -- u' )
+code root2 ( u -- u' )
     d1 clear, 1 # d2 move, begin 2 # d2 ror, d2 tos compare, ugt= until
     begin d2 test, z<> while
         d2 d3 move, d1 d3 add, 1 # d1 lsr, d3 tos compare,
         ugt= if d3 tos sub, d2 d1 add, endif 2 # d2 lsr, repeat
-    d1 tos move, next
+    d1 tos move, next       aka sqrt
 
 code power2 ( u -- u' )
     tos dec, tos d1 move,

@@ -30,7 +30,7 @@ Forth definitions
     $2700 # sr move,
 
     \ Trademark Security System check
-    $A10000 [#] a1 lea,
+    $A10000 [#] a1 address,
     [a1 $8 +] test, z= if
         [a1 $C +] w test, z= if
             [a1 $1 +] d1 b move, $F # d1 b and, z<> if
@@ -42,11 +42,11 @@ Forth definitions
     [rp]+ [[ d1 d2 d3 d4 d5 d6 d7 tos a1 a2 a3 $200C tp sp rp np ]] movem,
 
     \ initialize stack pointers
-    (rp-empty) [#] rp lea, (sp-empty) [#] sp lea,
-           FloatStack [IF] (fp-empty) [#] fp lea, [THEN]
+    (rp-empty) [#] rp address, (sp-empty) [#] sp address,
+               FloatStack [IF] (fp-empty) [#] fp address, [THEN]
 
     \ launch threading mechanism, transition to Forth code execution
-    next& [#] np lea,  $4BFA0004 , next ]
+    next& [#] np address,  $4BFA0004 , next ]
 
 ( ---------------------------------------------------------------------------- )
 (       Forth part                                                             )
@@ -57,16 +57,17 @@ Forth definitions
     init-audio
 
     \ video hardware
-    begin dma? not until  -video  clear-vram  init-video  init-dma
+    begin dma? not until -video
+    clear-vram   (init-video)  default-video-config  init-dma  init-graphics
     ['] noop dup  is (scrollX)  is (scrollY)
-
+    
     \ Forth environment
     init-exceptions   0 to #frames   decimal
-    init-memory
+    init-memory       zero-controllers
 
     \ terminal text display
-    15 to text-color-index    $0000 load-glyph-data     ['] <emit> is emit
-     0 to attributes          planeA> terminal page     ['] <type> is type
+    15 to text-color-index       $0040 load-glyph-data   ['] <emit> is emit
+     2 to attributes    foreground-table terminal page   ['] <type> is type
      +video
 
     \ call user's entry point, catching any thrown exceptions

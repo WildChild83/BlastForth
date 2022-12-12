@@ -91,12 +91,13 @@ create glyph-data  bytes[
 cvalue  text-color-index
 
 rawcode (load-glyph-data) \ A1=video data, A2=glyph data, TOS=color index
-    7 d5 do [a2]+ d1 b move, 8 d4 do 1 # d1 b rol, 0 # d1 bittest, d2 z<> set?,
+    7 d5 do [a2]+ d1 b move, 8 d4 do 1 # d1 b rol, 0 # d1 test-bit, d2 z<> set?,
     tos d2 b and, 4 # d3 lsl, d2 d3 b or, loop d3 [a1] move, loop return, end
 
 code load-glyph-data ( vramaddr -- )
-    video-data [#] a1 lea, glyph-data [#] a2 lea, $8F02 # [a1 4 +] h move,
-    2 # tos lsl, 2 # tos h lsr, $4000 # tos or, tos swap, tos [a1 4 +] move,    
+    video-data [#] a1 address, glyph-data [#] a2 address,
+    $8F02 # [a1 4 +] h move, 2 # tos lsl, 2 # tos h lsr,
+    $4000 # tos or, tos swap, tos [a1 4 +] move,
     text-color-index [#] tos b move, 15 # tos b and, d7 clear,
     62 d6 do (load-glyph-data) subroutine, d7 [a1] move, loop
      2 d6 do d7 [a1] move, (load-glyph-data) subroutine, loop
@@ -137,37 +138,37 @@ hvalue attributes   6 allot
 \ cursorY=attributes+2, cursorX=+3, yShift=+4, xMax=+5, vram-addr=+6
 
 code terminal ( vramaddr -- )
-    attributes [#] a1 lea, video-config-buffer [#] a2 lea,
-    tos [a1 6 +] h move, tos pull, [a2 16 +] d1 c move,
+    attributes [#] a1 address, video-mode-registers [#] a2 address,
+    tos [a1 6 +] h move, tos pull, [a2 17 +] d1 c move,
     3 # d1 c and, 6 # d1 c add, 9 # d1 c compare, d2 z= set?,
-    d2 d1 c add, d1 [a1 4 +] c move, [a2 12 +] d1 c move, $81 # d1 c and,
+    d2 d1 c add, d1 [a1 4 +] c move, [a2 3 +] d1 c move, $81 # d1 c and,
     z<> if 35 # [a1 5 +] c move, else 27 # [a1 5 +] c move, endif next
 
 code terminal-xy ( -- x y )
-    attributes [#] a1 lea, tos push, tos clear, [a1 3 +] tos c move,
+    attributes [#] a1 address, tos push, tos clear, [a1 3 +] tos c move,
     tos push, [a1 2 +] tos c move, next
 
 code at-xy ( x y -- )
-    attributes [#] a1 lea, 26 # tos c compare, d1 lt set?, d1 tos c and,
+    attributes [#] a1 address, 26 # tos c compare, d1 lt set?, d1 tos c and,
     tos [a1 2 +] c move, tos pull, [a1 5 +] tos c compare, d1 lt set?,
     d1 tos c and, tos [a1 3 +] c move, tos pull, next
 
 code cr ( -- )
-    attributes [#] a1 lea,   PC: (?cr)   [a1 3 +] c clear,
+    attributes [#] a1 address,   PC: (?cr)   [a1 3 +] c clear,
     [a1 2 +] d1 c move, d1 c inc, 26 # d1 c compare, d2 gt= set?,
     26 # d2 c and, d2 d1 c sub, d1 [a1 2 +] c move, next
 code ?cr ( addr u -- )
-    attributes [#] a1 lea, [a1 5 +] d1 c move, [a1 3 +] d1 c sub,
+    attributes [#] a1 address, [a1 5 +] d1 c move, [a1 3 +] d1 c sub,
     d1 tos c compare, (?cr) gt primitive?, next
 
 code (emit3) ( -- )
-    attributes [#] a1 lea, [a1 3 +] d1 c move, d1 c inc, [a1 5 +] d1 c compare,
-    ' cr >body gt primitive?, d1 [a1 3 +] c move, next
+    attributes [#] a1 address, [a1 3 +] d1 c move, d1 c inc,
+    [a1 5 +] d1 c compare, ' cr >body gt primitive?, d1 [a1 3 +] c move, next
 code (emit2) ( h vramaddr -- )
-    video-data [#] a1 lea, tos [a1 4 +] move, half # sp add,
-    [sp]+ [a1] h move, tos pull, next
+    video-data [#] a1 address, tos [a1 4 +] move,
+    half # sp add, [sp]+ [a1] h move, tos pull, next
 code (emit1) ( c -- h vramaddr )
-    attributes [#] a1 lea, [a1] tos h add, tos push, tos clear, d1 clear,
+    attributes [#] a1 address, [a1] tos h add, tos push, tos clear, d1 clear,
     [a1 6 +] tos h move, [a1 2 +] d1 c move, d1 c inc, [a1 4 +] d2 c move,
     d2 d1 h lsl, [a1 3 +] d2 c move, 1 # d2 c lsl, 4 # d2 c add, d2 d1 c add,
     d1 tos h add, 2 # tos lsl, 2 # tos h lsr, $4000 # tos h add, tos swap, next
@@ -210,26 +211,24 @@ synonym bl false        defer emit      defer type
 ( ---------------------------------------------------------------------------- )
 (       Number Words                                                           )
 ( ---------------------------------------------------------------------------- )
-\ variable base       40 allot variable (numbuffer)
-
 code decimal  10 # base [#] move, next
 code hex      16 # base [#] move, next
 
 code <# ( -- )
-    (numbuffer) [#] a1 lea, a1 [a1] move, next       aka <##
+    (numbuffer) [#] a1 address, a1 [a1] move, next       aka <##
 code sign ( n -- )
-    tos test, neg if (numbuffer) [#] a1 lea, [a1] a2 move, a2 dec,
+    tos test, neg if (numbuffer) [#] a1 address, [a1] a2 move, a2 dec,
     47 # [a2] c move, a2 [a1] move, endif tos pull, next
 code hold ( c -- )
-    (numbuffer) [#] a1 lea, [a1] a2 move, a2 dec,
+    (numbuffer) [#] a1 address, [a1] a2 move, a2 dec,
     tos [a2] c move, a2 [a1] move, tos pull, next
 code #> ( n -- addr u )
-    (numbuffer) [#] a1 lea, [a1] d1 move,
+    (numbuffer) [#] a1 address, [a1] d1 move,
     d1 push, a1 tos move, d1 tos sub, next
 code ##> ( d -- addr u ) cell # sp add, ' #> >body primitive, end
 
 code (##) ( ud flag -- ud' )
-    tos d4 move, tos pull, (numbuffer) [#] a1 lea,
+    tos d4 move, tos pull, (numbuffer) [#] a1 address,
     [a1] a2 move, a2 dec, base half+ [#] d1 h move, d2 clear,
     tos swap, tos d2 h move, d1 d2 divu, d2 tos h move,
     tos swap, tos d2 h move, d1 d2 divu, d2 tos h move, d4 test, z<> if    

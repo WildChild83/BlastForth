@@ -298,10 +298,10 @@ code  interrupts ( -- ) $2300 # sr move, next
 code -interrupts ( -- ) $2700 # sr move, next
 
 code -interrupts[ ( -- ) ( R: -- int-sys )
-     sr d1 move, d1 h rpush, $2700 # sr move, next
+     sr d1 h move, d1 h rpush, $2700 # sr move, next
 
 code ]-interrupts ( -- ) ( R: int-sys -- )
-    d1 h rpull, d1 sr move, next
+    d1 h rpull, d1 sr h move, next
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

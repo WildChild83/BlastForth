@@ -95,13 +95,13 @@ code (<exit>) tp rpull, next
 : (crash-system) ( sp  rp  throw-code -- )
     ['] (<exit>) is exit
     begin dma? not until
-    2 autoinc $0000 write-vram 64 kilobytes cell/ 0 do 0 !video loop
-    (init-video-config)
-    2 autoinc $C000 planeA $E000 planeB +h320 +v224
-    64x64planes 255 hbi-counter set-video
+    2 >autoinc $0000 write-vram 64 kilobytes cell/ 0 do 0 !video loop
+    (init-video)
+    2 >autoinc $C000 to foreground-table $E000 to background-table
+    +h320 +v224 64x64planes 255 >hint-counter set-video-config
     $00 write-cram $0000 h!video $0EEE h!video
-    1 to text-color-index    $0000 load-glyph-data     ['] <emit> is emit
-    0 to attributes          planeA> terminal page     ['] <type-words> is type
+    1 to text-color-index       $0000 load-glyph-data  ['] <emit> is emit
+    0 to attributes    foreground-table terminal page  ['] <type-words> is type
     +video
     
     cr cr dup exception>string type    
@@ -128,7 +128,7 @@ code (<exit>) tp rpull, next
 ( ---------------------------------------------------------------------------- )
 code crash-system ( throwcode -- )
     $2700 # sr move, $8104 # video-ctrl [#] h move,
-    $FFFFF0 [#] rp lea, [rp -128 +] sp lea, next& [#] np lea,
+    $FFFFF0 [#] rp address, [rp -128 +] sp address, next& [#] np address,
     ' (crash-system) execute, end
 
 ( ---------------------------------------------------------------------------- )

@@ -40,7 +40,7 @@ false make FloatStack
  32 bytes make ExceptionStackSize
 
 \ DMA operations are queued up in system RAM and executed during the next
-\   vertical blank.  Each operation occupies 14 bytes of RAM.  This value
+\   vertical blank.  Each operation occupies 16 bytes of RAM.  This value
 \   determines how many operations can be queued up simultaneously.
 \   Must be at least 1.
 16 make DMAQueueItems
@@ -126,10 +126,12 @@ FloatStack [IF]     \ If using floats, uncomment one and ONLY one of these:
 ( ---------------------------------------------------------------------------- )
 include system/interrupts.fs    \ vertical and horizontal blank handlers
 include system/allocate.fs      \ dynamic memory manager
-include system/video.fs         \ video display processor
+include system/video.fs         \ video display processor interface
+include system/graphics.fs      \ graphical asset manager
 include system/text.fs          \ text display, terminal output
 include system/exceptions.fs    \ default exception handlers
 include system/strings.fs       \ dynamic strings
+include system/import.fs        \ graphical asset loader
 include system/input.fs         \ read controllers
 
 ( ---------------------------------------------------------------------------- )
@@ -159,12 +161,14 @@ create default-palette
     $0000 h, $0008 h, $0080 h, $0800 h, $0088 h, $0808 h, $0880 h, $0AAA h,
     $0444 h, $000E h, $00E0 h, $0E00 h, $00EE h, $0E0E h, $0EE0 h, $0EEE h,
 
-: init-video \ this word will be invoked during system start-up
-    (init-video-config)     2 autoinc 
-    $C000 planeA        $B800 spritePlane       +h320  +v224
-    $E000 planeB        $BC00 hScrollTable      64x64planes
-    $B000 windowPlane     255 hbi-counter       
-    set-video
+: default-video-config \ this word will be invoked during system start-up
+    2 >autoinc
+    $C000 to foreground-table       $B800 to sprite-table
+    $E000 to background-table       $BC00 to scroll-table       
+    $B000 to     window-table       0 to windowX
+    +h320  +v224  64x64planes       0 to windowY
+    255 >hint-counter               0 to backcolor-index
+    set-video-config
     default-palette $00 16 move>color ;
 
 ( ---------------------------------------------------------------------------- )

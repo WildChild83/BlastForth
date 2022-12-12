@@ -245,8 +245,8 @@ $E000 shift: asr,   $E001 shift: lsr,   $E002 shift: roxr,  $E003 shift: ror,
         #d' of <long>  nip  sreg $800 + r> + h, h, endof
         #m' of <byte> 2drop $800 r> + ea @ + opsize+ h, h, ext1, endof
     invalid endcase clean ;
-$0000 bit: bittest, aka btst,       $0040 bit: bitchg, aka bchg,
-$0080 bit: bitclr,  aka bclr,       $00C0 bit: bitset, aka bset,
+$0000 bit: test-bit,  ( aka btst, ) $0040 bit: change-bit, ( aka bchg, )
+$0080 bit: clear-bit, ( aka bclr, ) $00C0 bit: set-bit,    ( aka bset, )
 
 : math: ( opcode "name" -- ) create host, does> ( arg1 arg2 -- )
     <word> @ >r 2arg case
@@ -269,7 +269,7 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
         #a' of nobyte nip dreg $B0C0 + opsize @ 4 and 6 lshift + imm, endof
         #m' of 2drop $0C00 ea @ + opsize+ h, imm#, ext1, endof
         mm' of 2drop --? not effect-error (easd) $B108 opsize+ h, endof
-    invalid endcase clean ;  aka cmp,
+    invalid endcase clean ;  \ aka cmp,
 
 : (csize+) ( n -- n' ) opsize @ 2 and 5 lshift + ;
 : check, ( mem dreg -- )
@@ -277,7 +277,7 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
         dd' of sdreg $4100 + (csize+) h, endof
         md' of nip dreg $4100 + (csize+) ea @ + h, ext1, endof
         #d' of nip dreg $4100 + (csize+) imm, endof
-    invalid endcase clean ;  aka chk,
+    invalid endcase clean ;  \ aka chk,
 
 : (size+)  ( n -- n' ) opsize @ dup 2/ or 3 and 12 lshift + ;
 : (eadest) ( n ea -- n' ) @ dup dreg swap $38 and 3 lshift + + ;
@@ -296,9 +296,9 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
                if (size+) imm, else swap $FF and + $7000 + h, endif endof
         #a' of  nip dreg (size+) $40 + imm, endof
         #m' of 2drop   0 (size+) ea (eadest) imm, ext1, endof
-        ds' of      <status> sreg $44C0 + h, endof
-        ms' of  nip <status> ea @ $44C0 + h, ext1, endof
-        #s' of  nip <status>      $46C0   imm, endof
+        ds' of      <status> sreg $46C0 + h, endof
+        ms' of  nip <status> ea @ $46C0 + h, ext1, endof
+        #s' of  nip <status>      $46C0 imm, endof
         sd' of swap <status> sreg $40C0 + h, endof
         sm' of drop <status> ea @ $40C0 + h, ext1, endof
     invalid endcase clean ;
@@ -312,17 +312,18 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
     invalid endcase clean ;
 
 : (ctrl) ( n -- n' ) ea @ dup $38 and dup $18 = swap $20 = or effect-error + ;
-:  pea, ( mem -- )
-    1arg m' <> invalid-error drop $4840 (ctrl) h, ext1, clean ;
-:  lea, ( mem areg -- )
-    2arg ma' <> invalid-error nip dreg $41C0 + (ctrl) h, ext1, clean ;
+: rpush-address, ( mem -- )
+    1arg m' <> invalid-error drop $4840 (ctrl) h, ext1, clean ; \ aka pea,
+: address, ( mem areg -- )
+    2arg ma' <> invalid-error nip dreg $41C0 + (ctrl) h, ext1, clean ; \ aka lea,
 
-: exg, ( reg reg -- )
+: exchange, ( reg reg -- )
     2arg case dd' of $F140 endof aa' of $F148 endof
               ad' of $F188 endof da' of swap $F188 endof invalid endcase
     swap sdreg + h, clean ;
 
-: ext, ( reg ) nobyte 1arg d' <> invalid-error sreg $4880 + (ugh) h, clean ;
+: (extend) ( reg ) nobyte 1arg d' <> invalid-error sreg $4880 + (ugh) h, clean ;
+:  extend, ( reg -- ) opsize @ 1 = if dup h (extend) endif (extend) ;
 
 : clear, ( arg -- )
     1arg case
@@ -330,12 +331,12 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
               if dreg $7000 else sreg $4200 opsize+ endif + h, endof
         a' of nobyte dreg $3040 + 0 swap h imm, endof
         m' of drop $4200 ea, endof
-    invalid endcase clean ;  aka clr,
+    invalid endcase clean ;  \ aka clr,
 
 : link, ( n # areg -- ) 
     <long> 2arg #a' <> invalid-error sreg $4E50 + h, drop w imm#, clean ;
 : unlink, ( areg -- )
-    <long> 1arg a' <> invalid-error sreg $4E58 + h, clean ;  aka unlk,
+    <long> 1arg a' <> invalid-error sreg $4E58 + h, clean ;  \ aka unlk,
 
 : swap, ( dreg -- ) <long> 1arg d' <> invalid-error sreg $4840 + h, clean ;
 : stop,  ( n # -- ) <word> } # { <> invalid-error $4E72 h, w imm#,  clean ;
@@ -343,25 +344,25 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
 : illegal,   ( -- ) <long> $4AFC h, clean ;
 : reset,     ( -- ) <long> $4E70 h, clean ;
 : nop,       ( -- ) <long> $4E71 h, clean ;
-: ireturn,   ( -- ) <long> $4E73 h, clean ;  aka rte,
-: return,    ( -- ) <long> $4E75 h, clean ;  aka rts,
+: ireturn,   ( -- ) <long> $4E73 h, clean ;  \ aka rte,
+: return,    ( -- ) <long> $4E75 h, clean ;  \ aka rts,
 : trapv,     ( -- ) <long> $4E76 h, clean ;
-: ccreturn,  ( -- ) <long> $4E77 h, clean ;  aka rtr,
+: ccreturn,  ( -- ) <long> $4E77 h, clean ;  \ aka rtr,
 
 : branch?, ( disp cc -- )
     $6000 +cc <word> swap ?shalf not disp-error
-    ?schar if $FF and + else swap h, endif h, clean ;   aka bra?,
-: branch, ( disp -- ) yes branch?, ;                    aka bra,
-: brasub, ( disp -- )  no branch?, ;                    aka bsr,
+    ?schar if $FF and + else swap h, endif h, clean ;   \ aka bra?,
+: branch,     ( disp -- ) yes branch?, ;                \ aka bra,
+: branch-sub, ( disp -- )  no branch?, ;                \ aka bsr,
 
-: decbra?, ( reg disp cc -- )
+: dec-branch?, ( reg disp cc -- )
     <word> rot 1arg d' <> invalid-error
-    sreg +cc $50C8 + h, w imm#, clean ;                 aka dbra?,
-: decbra, ( reg disp -- ) no decbra?, ;                 aka dbra,
+    sreg +cc $50C8 + h, w imm#, clean ;                 \ aka dbra?,
+: dec-branch, ( reg disp -- ) no dec-branch?, ;         \ aka dbra,
 
 : jump: ( opcode "name" -- ) create host, does> ( mem -- )
     @ swap 1arg m' <> invalid-error drop (ctrl) h, ext1, clean ;
-$4EC0 jump: jump, aka jmp,      $4E80 jump: jumpsub, aka jsr,
+$4EC0 jump: jump, ( aka jmp, )  $4E80 jump: jump-sub, ( aka jsr, )
 
 ( ---------------------------------------------------------------------------- )
 (       Move 'em                                                               )
@@ -398,7 +399,6 @@ $A000 make [[
 :  read, ( reg -- )  [tp]+ swap move, ;
 :   inc, ( reg -- )  1 } # { rot add, ;
 :   dec, ( reg -- )  1 } # { rot sub, ;
-:  extb, ( reg -- )  dup w ext,  ext, ;     aka extc,
 
 ( ---------------------------------------------------------------------------- )
 (       Flow Control                                                           )
@@ -422,8 +422,8 @@ $A000 make [[
 
 : do ( n reg -- reg dest )
     1arg d' <> invalid-error swap 1- } # { third h move, } begin { ;
-: loop  ( reg dest -- ) displacement decbra, ;
-: loop? ( reg dest cc -- ) $100 xor >r displacement r> decbra?, ;
+: loop  ( reg dest -- ) displacement dec-branch, ;
+: loop? ( reg dest cc -- ) $100 xor >r displacement r> dec-branch?, ;
 
 ( ---------------------------------------------------------------------------- )
 (       Callers                                                                )
@@ -432,10 +432,10 @@ $A000 make [[
     third displacement ?shalf if swap execute 2drop exit endif
     2drop >r [#] r> execute ;
 
-: primitive,  ( addr -- )    ['] jump,    ['] branch, (call,) ;
-: subroutine, ( addr -- )    ['] jumpsub, ['] brasub, (call,) ;
+: primitive,  ( addr -- )    ['] jump,     ['] branch,     (call,) ;
+: subroutine, ( addr -- )    ['] jump-sub, ['] branch-sub, (call,) ;
 : primitive?, ( addr cc -- ) >r displacement r> branch?, ;
-: execute,    ( xt -- )      [#] dfa lea, [dfa]+ a1 move, [a1] jump, ;
+: execute,    ( xt -- )      [#] dfa address, [dfa]+ a1 move, [a1] jump, ;
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

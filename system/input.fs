@@ -34,7 +34,7 @@ value controller4           value old-controller4
 (       Button Presses                                                         )
 ( ---------------------------------------------------------------------------- )
 {:} button: ( c -- ) create c,   ;code ( controller -- flag )
-    [dfa] d1 c move, d1 tos bittest, tos z= set?, tos extb, next
+    [dfa] d1 c move, d1 tos test-bit, tos z= set?, tos c extend, next
 
 0 button: up?           4 button: b?            16 button: z?
 1 button: down?         5 button: c?            17 button: y?
@@ -47,29 +47,27 @@ value controller4           value old-controller4
 defer read-controllers
 
 code <2pad3@> ( -- )
-    controller-data1 [#] a1 lea,  controller-data2 [#] a2 lea,
+    controller-data1 [#] a1 address,  controller-data2 [#] a2 address,
     d1 clear, d2 clear, $00 # d3 move, $40 # d4 move,
     d4 [a1 6 +] c move, d4 [a2 6 +] c move, d3 [a1] c move, d3 [a2] c move,
-    [a1] d1 c move, $30 # d1 c and, 2 # d1 c lsl,
-    [a2] d2 c move, $30 # d2 c and, 2 # d2 c lsl,
-    d4 [a1] c move, d4 [a2] c move,
+    [a1] d1 c move, $30 # d1 c and, 2 # d1 c lsl, d4 [a1] c move, 
+    [a2] d2 c move, $30 # d2 c and, 2 # d2 c lsl, d4 [a2] c move,    
     [a1] d5 c move, $3F # d5 c and, d5 d1 c or,
     [a2] d5 c move, $3F # d5 c and, d5 d2 c or,
-    controller1 [#] a3 lea, d1 [a3]+ move, d2 [a3]+ move, next
+    controller1 [#] a3 address, d1 [a3]+ move, d2 [a3]+ move, next
 
 code <2pad6@> ( -- )
-    controller-data1 [#] a1 lea,  controller-data2 [#] a2 lea,
+    controller-data1 [#] a1 address,  controller-data2 [#] a2 address,
     d1 clear, d2 clear, $00 # d3 move, $40 # d4 move,
     d4 [a1 6 +] c move, d4 [a2 6 +] c move, d3 [a1] c move, d3 [a2] c move,
     d4 [a1] c move, d4 [a1] c move, d3 [a1] c move, d3 [a1] c move,
-    [a1] d1 c move, $30 # d1 c and, 2 # d1 c lsl,
-    [a2] d2 c move, $30 # d2 c and, 2 # d2 c lsl,
-    d4 [a1] c move, d4 [a1] c move,
+    [a1] d1 c move, $30 # d1 c and, 2 # d1 c lsl, d4 [a1] c move,
+    [a2] d2 c move, $30 # d2 c and, 2 # d2 c lsl, d4 [a2] c move,
     [a1] d5 c move, $3F # d5 c and, d5 d1 c or,
     [a2] d5 c move, $3F # d5 c and, d5 d2 c or,
-    d3 [a1] c move, d3 [a1] c move, d4 [a1] c move, d4 [a1] c move,
+    d3 [a1] c move, d3 [a2] c move, d4 [a1] c move, d4 [a2] c move,
     d1 swap, [a1] d1 c move, d1 swap, d2 swap, [a2] d2 c move, d2 swap,
-    controller1 [#] a3 lea, d1 [a3]+ move, d2 [a3]+ move, next
+    controller1 [#] a3 address, d1 [a3]+ move, d2 [a3]+ move, next
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

@@ -27,7 +27,7 @@ hvalue #frames               \ counts how many VBIs have occurred (up to 65535)
 defer vertical-blank-handler \ code field address of software vblank routine
 
 create vbnext&  asm
-    next& [#] np lea,        \ restore NP to "standard next"
+    next& [#] np address,    \ restore NP to "standard next"
     1 # #frames [#] h add,   \ increment frame counter
     vertical-blank-handler
         [#] dfa move,        \ DFA = code field address
@@ -46,7 +46,7 @@ create vbnext&  asm
 (           switch from "standard next" to "vblank next"                       )
 ( ---------------------------------------------------------------------------- )
 asm 68k-vbi:                \ CPU vector table points here
-    vbnext& [#] np lea,     \ point NP to "vblank next"
+    vbnext& [#] np address, \ point NP to "vblank next"
     ireturn,                \ all done!
     end
 
