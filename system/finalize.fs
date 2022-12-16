@@ -66,8 +66,8 @@ Forth definitions
     init-memory       zero-controllers
 
     \ terminal text display
-    15 to text-color-index       $0040 load-glyph-data   ['] <emit> is emit
-     2 to attributes    foreground-table terminal page   ['] <type> is type
+    15 to text-color-index       $0000 load-glyph-data   ['] <emit> is emit
+     0 to attributes    foreground-table terminal page   ['] <type> is type
      +video
 
     \ call user's entry point, catching any thrown exceptions

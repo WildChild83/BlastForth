@@ -79,13 +79,17 @@ create (blastforth-exceptions)
 
     cstring" End of User Code"                  \ -265
     cstring" DMA Queue Overflow"                \ -266
+    cstring" Invalid Video Memory Region Size"  \ -267
+    cstring" Out of Video Memory"               \ -268
+    cstring" Invalid Video Memory Address"      \ -269
+    cstring" Video Memory De-Allocate Error"    \ -270
 
 ( ---------------------------------------------------------------------------- )
 value (abort-string)
 
 : exception>string ( n -- addr u )
     dup -2 = if drop (abort-string) count exit endif
-    0 min negate dup 256 267 within
+    0 min negate dup 256 271 within
     if 256 - (blastforth-exceptions) else dup 79 <= and (exception-names) endif
     swap 0 ?do count + loop count ?if exit endif drop (exception-names) count ;
 

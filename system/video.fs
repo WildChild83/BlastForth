@@ -256,6 +256,7 @@ code flush-dma-queue ( -- )
               $100 # [a3] h move, [a2]+ [a1] move, 0 # [a3] h move,
               a2 d2 h compare, z= until
         $8104 # d3 h move, video-mode-registers 1+ [#] d3 c or, d3 [a1] h move,
+        $8F00 # d3 h move, autoinc> [#] d3 c move, d3 [a1] h move, 
     endif next
 
 ( ---------------------------------------------------------------------------- )
