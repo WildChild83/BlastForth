@@ -45,21 +45,21 @@ Forth definitions
 { :noname 8 - ; }      anon 8 # tos sub, next   host/target: 8-
 
 { '  abs }      anon tos test, neg if tos neg, endif next   host/target: abs
-{ ' lshift }    anon d1 pull, tos d1 lsl, d1 tos move, next  host/target: lshift
-{ ' rshift }    anon d1 pull, tos d1 lsr, d1 tos move, next  host/target: rshift
+{ ' lshift }    anon d1 pull, tos d1 lsl, d1 tos move, next host/target: lshift
+{ ' rshift }    anon d1 pull, tos d1 lsr, d1 tos move, next host/target: rshift
 { ' invert }    anon tos not, next                          host/target: invert
 { ' negate }    anon tos neg, next                          host/target: negate
 { ' and }       anon [sp]+ tos and, next                    host/target: and
 { '  or }       anon [sp]+ tos  or, next                    host/target:  or
-{ ' xor }       anon d1 pull, d1 tos xor, next               host/target: xor
+{ ' xor }       anon d1 pull, d1 tos xor, next              host/target: xor
 
-{ ' swap }      anon d1 pull, tos push, d1 tos move, next    host/target: swap
-{ ' drop }      anon tos pull, next                          host/target: drop
+{ ' swap }      anon d1 pull, tos push, d1 tos move, next   host/target: swap
+{ ' drop }      anon tos pull, next                         host/target: drop
 { '  dup }      anon tos push, next                         host/target:  dup
 { ' ?dup }      anon tos test, z<> if tos push, endif next  host/target: ?dup
 { ' over }      anon d1 peek, tos push, d1 tos move, next   host/target: over
 { '  nip }      anon cell # sp add, next                    host/target:  nip
-{ ' tuck }      anon d1 pull, tos push, d1 push, next        host/target: tuck
+{ ' tuck }      anon d1 pull, tos push, d1 push, next       host/target: tuck
 
 { '  rot }      anon d1 pull, d2 pull, d1 push,
                     tos push, d2 tos move, next     host/target:  rot
@@ -121,6 +121,8 @@ code 2swap      d1 pull, d2 pull, d3 pull, d1 push,
 code third      tos push, [sp 2 cells +] tos move, next
 code fourth     tos push, [sp 3 cells +] tos move, next
 
+code ndrop      2 # tos h lsl, [sp tos+ 0] sp address, tos pull, next
+
 code  >r        tos rpush, tos  pull, next
 code  r>        tos  push, tos rpull,  next
 code 2>r        [sp]+ rpush, tos rpush, tos pull, next
@@ -162,12 +164,12 @@ code drshift
     d1 pull, d2 pull, -1 # d3 move, tos d1 ror, tos d2 lsr, tos d3 lsr,
     d3 tos move, d1 tos and, d3 not, d3 d1 and, d1 d2 or, d2 push, next
 
-code 16rotate   tos swap, next          synonym 32drotate swap
+code 16lshift   tos swap, tos h clear, next
+code 16rshift   tos h clear, tos swap, next
+code 16rotate   tos swap, next                  synonym 32drotate swap
 
-code umin       d1 pull, d1 tos compare, ugt if d1 tos move, endif next
-code umax       d1 pull, d1 tos compare, ult if d1 tos move, endif next
-code  min       d1 pull, d1 tos compare,  gt if d1 tos move, endif next
-code  max       d1 pull, d1 tos compare,  lt if d1 tos move, endif next
+code min        d1 pull, d1 tos compare, gt if d1 tos move, endif next
+code max        d1 pull, d1 tos compare, lt if d1 tos move, endif next
 
 code 0=         tos test, tos  z=  set?, tos c extend, next   aka not
 code 0<>        tos test, tos  z<> set?, tos c extend, next   aka flag

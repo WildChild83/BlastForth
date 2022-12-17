@@ -11,6 +11,7 @@
 (           - romfile.fs                                                       )
 (                                                                              )
 (       TODO:                                                                  )
+(           - user stack pointer                                               )
 (           - more testing                                                     )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
@@ -301,6 +302,8 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
         #s' of  nip <status>      $46C0 imm, endof
         sd' of swap <status> sreg $40C0 + h, endof
         sm' of drop <status> ea @ $40C0 + h, ext1, endof
+     $9023  of <long>      usp <> invalid-error sreg $4E60 + h, endof
+     $9032  of <long> swap usp <> invalid-error sreg $4E68 + h, endof
     invalid endcase clean ;
 
 : (disp) ( -- ) ea @ $38 and %101000 <> effect-error ;
@@ -339,7 +342,7 @@ $80C0 math: divu,   $81C0 math: divs,   $C0C0 math: mulu,   $C1C0 math: muls,
     <long> 1arg a' <> invalid-error sreg $4E58 + h, clean ;  \ aka unlk,
 
 : swap, ( dreg -- ) <long> 1arg d' <> invalid-error sreg $4840 + h, clean ;
-: stop,  ( n # -- ) <word> } # { <> invalid-error $4E72 h, w imm#,  clean ;
+: stop,  ( n # -- ) <long> } # { <> invalid-error $4E72 h, w imm#,  clean ;
 : trap,  ( n # -- ) <long> } # { <> invalid-error 15 and $4E40 + h, clean ;
 : illegal,   ( -- ) <long> $4AFC h, clean ;
 : reset,     ( -- ) <long> $4E70 h, clean ;

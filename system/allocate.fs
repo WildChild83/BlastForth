@@ -31,7 +31,7 @@ alignram 0 buffer: pad
 (           - is only a "next" pointer                                         )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
-: init-memory ( -- ) -2 dup dup h! pad pad-size + - 16 lshift -6 ! ;
+: init-memory ( -- ) -2 dup dup h! pad pad-size + - 16lshift -6 ! ;
 
 code allocate ( u -- addr ior )
     (alloc-minimum) # tos h compare, ult if (alloc-minimum) # tos move, endif

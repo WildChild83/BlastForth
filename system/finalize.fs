@@ -46,7 +46,7 @@ Forth definitions
                FloatStack [IF] (fp-empty) [#] fp address, [THEN]
 
     \ launch threading mechanism, transition to Forth code execution
-    next& [#] np address,  $4BFA0004 , next ]
+    next& [#] np address,  [pc 4 +] tp address,  next ]
 
 ( ---------------------------------------------------------------------------- )
 (       Forth part                                                             )

@@ -150,20 +150,20 @@ DEBUG [IF]
 { : : ( "name" -- ) host-only
     create docolon& codefield, } ] { does> ( -- ) comp-only @ , ; }
 
-{ : :noname ( -- xt ) host-only  PC  docolon& codefield, } ] { ; }
-
 { synonym {:} : }
 { synonym {;} ; immediate }
 
+{ : :noname ( -- xt ) host-only  PC  docolon& codefield, } ] {;}
+
 asm { : (dodoes>) ( -- addr ) host-only
-    tos push, dfa tos move, tp rpush, $4BFA0004 , next, } ] { ; } end
+    tos push, dfa tos move, tp rpush, [pc 4 +] tp address, next, } ] {;} end
 { : does> ( -- ) host-only
     PC postpone literal   postpone (newxt)   postpone ; (dodoes>) ; immediate }
 
 code execute ( xt -- ) tos dfa move, tos pull, [dfa]+ a1 move, [a1] jump, end
 
-{ : ]L    ( n -- ) host-only state on }  literal [ ] { ; }
-{ : ]2L ( n n -- ) host-only state on } 2literal [ ] { ; }
+{ : ]L    ( n -- ) host-only state on }  literal [ ] {;}
+{ : ]2L ( n n -- ) host-only state on } 2literal [ ] {;}
 
 ( ---------------------------------------------------------------------------- )
 (       Constants                                                              )

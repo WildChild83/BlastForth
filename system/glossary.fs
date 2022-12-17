@@ -62,8 +62,9 @@ blast-gloss searchorder ! get-order blast-gloss @ swap 1+ set-order definitions
 forth-wordlist
     Glossary Host definitions
 >order
-
-    ( *** ) include transcribe.fs ( *** )
+            ( --------------------------------- )
+            ( *** ) include transcribe.fs ( *** )
+            ( --------------------------------- )
 
 : } ( -- ) previous ; immediate
 : host,  ( n -- )  , ;
@@ -106,8 +107,6 @@ synonym flag 0<>     synonym not 0=
 : 2rdrop  r> 2r> 2drop >r  ;
 : -rot    rot rot          ;
 : -2rot   2rot 2rot        ;    aka 2-rot
-:  umin   2dup u> if swap endif drop ;
-:  umax   2dup u< if swap endif drop ;
 :  noop   ;
 
 ( ---------------------------------------------------------------------------- )
@@ -119,24 +118,14 @@ synonym flag 0<>     synonym not 0=
 :  ?cell ( n -- n flag ) dup -2147483648 4294967296 within ;
 
 ( ---------------------------------------------------------------------------- )
-: c!+ ( c addr -- addr' ) tuck c! 1+ ;
-:  !+ ( n addr -- addr' ) tuck  ! cell+ ;
-:  @+ ( addr -- addr' n ) dup @ swap cell+ ;
 : cellcount ( addr -- addr' n ) dup cell+ swap @ ;
 : demux  ( n u -- n1 n2 ) 2dup invert and -rot and ;
-: bounds ( addr u -- limit index ) over + swap ;
-: ndrop  ( n*x  n -- ) 0 ?do drop loop ;
 : uppercase  ( c -- c' ) dup [ char a char z 1+ ] 2literal within 32 and - ;
-: c=   ( c1 c2 -- flag ) uppercase swap uppercase =  ;
 : c<>  ( c1 c2 -- flag ) uppercase swap uppercase <> ;
 : str= ( addr1 u1 addr2 u2 -- flag )
-    rot over <> if 3 ndrop false exit endif
-    bounds ?do count i c@ c<> if drop unloop false exit endif loop drop true ;
-: mem= ( addr1 u1 addr2 u2 -- flag ) compare 0= ;
-
-( ---------------------------------------------------------------------------- )
-1 cells make cell
-: cell-   cell - ;
+    rot over <> if 3 0 ?do drop loop false exit endif
+    over + swap ?do count i c@ c<> if drop unloop false exit endif loop
+    drop true ;
 
 ( ---------------------------------------------------------------------------- )
 :     bytes ( n -- n' ) ;
