@@ -11,7 +11,6 @@
 (           - romfile.fs                                                       )
 (                                                                              )
 (       TODO:                                                                  )
-(           - PC-relative addressing                                           )
 (           - more testing                                                     )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
@@ -98,14 +97,15 @@ variable ext1       variable ext2       variable ext
 %010101 addr: [tp]  %011101 addr: [tp]+  %100101 addr: -[tp]  %101101 addr: [tp
 %010110 addr: [sp]  %011110 addr: [sp]+  %100110 addr: -[sp]  %101110 addr: [sp
 %010111 addr: [rp]  %011111 addr: [rp]+  %100111 addr: -[rp]  %101111 addr: [rp
-
+                                                              %111010 addr: [pc
 FloatStack [IF]
 %010100 addr: [fp]  %011100 addr: [fp]+  %100100 addr: -[fp]  %101100 addr: [fp
 [ELSE]
 %010100 addr: [a4]  %011100 addr: [a4]+  %100100 addr: -[a4]  %101100 addr: [a4
 [THEN]
 
-: (ndx) ( addr -- flag ) dup @ $38 and $28 <> dup if nip exit endif $8 rot +! ;    
+: (pc?) ( n -- flag ) $38 and dup $38 <> swap $28 <> and ;
+: (ndx) ( addr -- flag ) dup @ (pc?) dup if nip exit endif $8 rot +! ;    
 :  ndx: ( n "name" -- ) create host, does> ( -- )
     ea (ndx) if ea' (ndx) effect-error endif @ ext @ +! ;
 $080F ndx: tos+     $480F ndx: d4+      $880F ndx: np+    ( $C80F ndx: fp+ )
