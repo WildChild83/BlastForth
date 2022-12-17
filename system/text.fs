@@ -153,26 +153,22 @@ code at-xy ( x y -- )
     tos [a1 2 +] c move, tos pull, [a1 5 +] tos c compare, d1 lt set?,
     d1 tos c and, tos [a1 3 +] c move, tos pull, next
 
-code cr ( -- )
-    attributes [#] a1 address,   PC: (?cr)   [a1 3 +] c clear,
-    [a1 2 +] d1 c move, d1 c inc, 26 # d1 c compare, d2 gt= set?,
-    26 # d2 c and, d2 d1 c sub, d1 [a1 2 +] c move, next
+code cr ( -- ) attributes [#] a1 address, end
+rawcode (cr)
+    [a1 3 +] c clear, [a1 2 +] d1 c move, d1 c inc, 26 # d1 c compare,
+    d2 gt= set?, 26 # d2 c and, d2 d1 c sub, d1 [a1 2 +] c move, next
 code ?cr ( addr u -- )
     attributes [#] a1 address, [a1 5 +] d1 c move, [a1 3 +] d1 c sub,
-    d1 tos c compare, (?cr) gt primitive?, next
+    d1 tos c compare, (cr) gt primitive?, next
 
-code (emit3) ( -- )
-    attributes [#] a1 address, [a1 3 +] d1 c move, d1 c inc,
-    [a1 5 +] d1 c compare, ' cr >body gt primitive?, d1 [a1 3 +] c move, next
-code (emit2) ( h vramaddr -- )
-    video-data [#] a1 address, tos [a1 4 +] move,
-    half # sp add, [sp]+ [a1] h move, tos pull, next
-code (emit1) ( c -- h vramaddr )
-    attributes [#] a1 address, [a1] tos h add, tos push, tos clear, d1 clear,
-    [a1 6 +] tos h move, [a1 2 +] d1 c move, d1 c inc, [a1 4 +] d2 c move,
-    d2 d1 h lsl, [a1 3 +] d2 c move, 1 # d2 c lsl, 4 # d2 c add, d2 d1 c add,
-    d1 tos h add, 2 # tos lsl, 2 # tos h lsr, $4000 # tos h add, tos swap, next
-: <emit> ( c -- ) (emit1) (emit2) (emit3) ;
+code <emit> ( c -- )
+    attributes [#] a1 address, video-data [#] a2 address, 
+    [a1] tos h add, d3 clear, d1 clear, [a1 6 +] d3 h move, [a1 2 +] d1 c move,
+    d1 c inc, [a1 4 +] d2 c move, d2 d1 h lsl, [a1 3 +] d2 c move, d2 d2 c add,
+    4 # d2 c add, d2 d1 c add, d1 d3 h add, 2 # d3 lsl, 2 # d3 h lsr,
+    $4000 # d3 h add, d3 swap, d3 [a2 4 +] move, tos [a2] h move, tos pull,
+    [a1 3 +] d1 c move, d1 c inc, [a1 5 +] d1 c compare, (cr) gt primitive?,
+    d1 [a1 3 +] c move, next
 
 synonym bl false        defer emit      defer type
 

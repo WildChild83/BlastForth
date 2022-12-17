@@ -153,7 +153,7 @@ DEBUG [IF]
 { : :noname ( -- xt ) host-only  PC  docolon& codefield, } ] { ; }
 
 { synonym {:} : }
-{ synonym {;} ; }
+{ synonym {;} ; immediate }
 
 asm { : (dodoes>) ( -- addr ) host-only
     tos push, dfa tos move, tp rpush, $4BFA0004 , next, } ] { ; } end

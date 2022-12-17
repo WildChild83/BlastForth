@@ -57,8 +57,8 @@ Forth definitions
     init-audio
 
     \ video hardware
-    begin dma? not until -video
-    clear-vram   (init-video)  default-video-config  init-dma  init-graphics
+    (init-video) begin dma? not until -video
+    clear-vram   default-video-config  init-dma  init-graphics
     ['] noop dup  is (scrollX)  is (scrollY)
     
     \ Forth environment

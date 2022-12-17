@@ -17,35 +17,24 @@
 Forth definitions
 
 ( ---------------------------------------------------------------------------- )
+(       Tilesize Operators                                                     )
+( ---------------------------------------------------------------------------- )
 32 constant tile
 { :noname 32 + ; }      anon 32 # tos   add, next       host/target: tile+
 { :noname 32 - ; }      anon 32 # tos   sub, next       host/target: tile-
 { :noname 32 * ; }      anon  5 # tos h asl, next       host/target: tiles
 { :noname 32 / ; }      anon  5 # tos h asr, next       host/target: tile/
 
-code (gnode@) ( vram -- node )
-    video-ctrl [#] a1 address, $8F02 # [a1] h move, 2 # tos lsl, 2 # tos h lsr,
-    tos swap, tos [a1] move, [a1 -4 +] tos move, next
-code (gnode!) ( node vram -- )
-    video-ctrl [#] a1 address, $8F02 # [a1] h move, 2 # tos lsl, 2 # tos h lsr,
-    $4000 # tos h or, tos swap, tos [a1] move, [sp]+ [a1 -4 +] move,
-    tos pull, next
-
-code (gnode.next)  ( node -- next ) tos h clear, tos swap, next
-code (gnode.size)  ( node -- size ) $FFFF # tos and, next
-code (gnode>) ( node -- size next )
-    tos h push, half # sp sub, tos h clear, tos swap, next
-code (>gnode) ( size next -- node )
-    tos swap, half # sp add, tos h pull, next
-
+( ---------------------------------------------------------------------------- )
+(       Video Memory Manager                                                   )
+( ---------------------------------------------------------------------------- )
+(       Graphics Free Node is 4 bytes, located in VRAM                         )
+(           - node address = size of this node                                 )
+(           - node address plus 2 = address of next node                       )
+(       Address of First Node is 2 bytes in system RAM  [gnode.start]          )
+(                                                                              )
 ( ---------------------------------------------------------------------------- )
 hvalue (gnode.start)
-
-: init-graphics ( -- )
-    2 kilobytes to (gnode.start)
-    $10000 foreground-table min background-table min
-               window-table min     sprite-table min scroll-table min
-    (gnode.start) - 0 (>gnode) (gnode.start) (gnode!) ;
 
 ( ---------------------------------------------------------------------------- )
 code (galloc1) ( bytes -- prev this bytes )
@@ -121,6 +110,50 @@ code (gavail2) ( bytes vramaddr -- bytes [vramaddr] )
     2 >autoinc (gavail1) begin (gavail2) again ;
 
 ( ---------------------------------------------------------------------------- )
+: nametables ( -- vram-addr ) $10000 foreground-table  min
+                                     background-table  min
+                                         window-table  min
+                                         sprite-table  min
+                                         scroll-table  min ;
+: init-graphics ( -- )
+    0 to (gnode.start)   2 kilobytes   nametables over -   free-video throw ;
+
+( ---------------------------------------------------------------------------- )
+(       Pictures                                                               )
+( ---------------------------------------------------------------------------- )
+(       address of index calculator         4 bytes                            )
+(       RAM address of tile index           2 bytes                            )
+(       size of uncompressed data           2 bytes                            )
+(       xt of decompressor                  4 bytes                            )
+(       ROM picture data                    x bytes                            )
+( ---------------------------------------------------------------------------- )
+{:} picture ( index-addr "name" -- ) create , {;}
+
+( ---------------------------------------------------------------------------- )
+rawcode (index*1)   next
+rawcode (index*2)   tos tos h add, next
+rawcode (index*3)   tos d1 h move, d1 d1 h add, d1 tos h add, next
+rawcode (index*4)   2 # tos h lsl, next
+rawcode (index*6)   tos tos h add, tos d1 move, d1 d1 h add, d1 tos h add, next
+rawcode (index*8)   3 # tos h lsl, next
+rawcode (index*9)   tos d1 h move, 3 # tos h lsl, d1 tos h add, next
+rawcode (index*12)  2 # tos h lsl, tos d1 move, d1 d1 h add, d1 tos h add, next
+rawcode (index*16)  4 # tos h lsl, next
+
+code index ( picture  index -- tile )
+    a1 pull, [a1]+ a2 move, -1 # d1 move, [a1] d1 h move, d1 a1 move,
+    [a1] tos h add, [a2] jump, end
+
+( ---------------------------------------------------------------------------- )
+: init-picture ( picture -- ) cell+ h@ $FF0000 + 0 swap h! ;
+
+: free-picture ( picture -- ior )
+    cell+ halfcount $FF0000 + dup h@ tiles 0 rot h! swap h@ free-video ;
+
+: load-picture ( picture -- ior )
+    
+;
+
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

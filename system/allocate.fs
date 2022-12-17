@@ -20,24 +20,19 @@ Forth definitions
 ( ---------------------------------------------------------------------------- )
 alignram 0 buffer: pad
 
+16 cells constant pad-size          8 { make (alloc-minimum) }
+
 ( ---------------------------------------------------------------------------- )
-code ram ( haddr -- addr ) -1 # d1 move, tos d1 h move, d1 tos move, next
-
-8 { make (alloc-minimum) }
-
-16 cells constant pad-size
-
-: nodesize  ( node -- u )         cell- h@ ;
-: nextnode  ( node -- node' )     half- h@ ram ;
-: ?lastnode ( node -- node flag ) dup half- h@ 0= ;
-
-: @node ( node -- next size ) dup nextnode swap nodesize ;
-: !node ( next size node -- ) tuck cell- h! half- h! ;
-: !next ( next node -- ) half- h! ;
-
+(                                                                              )
+(       Free Node is 4 bytes, pointer points at "5th" byte                     )
+(           - pointer minus 2 = pointer to next node                           )
+(           - pointer minus 4 = size of this node                              )
+(       First Node, at address $FFFFFE, is only 2 bytes                        )
+(           - is only a "next" pointer                                         )
+(                                                                              )
+( ---------------------------------------------------------------------------- )
 : init-memory ( -- ) -2 dup dup h! pad pad-size + - 16 lshift -6 ! ;
 
-( ---------------------------------------------------------------------------- )
 code allocate ( u -- addr ior )
     (alloc-minimum) # tos h compare, ult if (alloc-minimum) # tos move, endif
     3 # tos h add, -2 # tos b and, a1 clear, -1 # d1 move, begin 
@@ -66,7 +61,7 @@ code free ( addr -- ior )
 code allocation ( addr -- u )
     tos a1 move, tos clear, [a1 -2 +] tos h move, next
 
-code free-memory ( -- u )
+code available ( -- u )
     tos push, tos clear, a1 clear, -1 # d1 move, begin
     [a1 -2 +] d1 h move, z<> while d1 a1 move, [a1 -4 +] tos h add, repeat next
 
