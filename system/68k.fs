@@ -11,8 +11,7 @@
 (           - romfile.fs                                                       )
 (                                                                              )
 (       TODO:                                                                  )
-(           - user stack pointer                                               )
-(           - more testing                                                     )
+(           - testing                                                          )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
 Forth definitions       Glossary Assembler definitions {

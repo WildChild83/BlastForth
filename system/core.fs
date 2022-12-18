@@ -121,8 +121,6 @@ code 2swap      d1 pull, d2 pull, d3 pull, d1 push,
 code third      tos push, [sp 2 cells +] tos move, next
 code fourth     tos push, [sp 3 cells +] tos move, next
 
-code ndrop      2 # tos h lsl, [sp tos+ 0] sp address, tos pull, next
-
 code  >r        tos rpush, tos  pull, next
 code  r>        tos  push, tos rpull,  next
 code 2>r        [sp]+ rpush, tos rpush, tos pull, next

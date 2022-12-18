@@ -119,15 +119,67 @@ code (gavail2) ( bytes vramaddr -- bytes [vramaddr] )
     0 to (gnode.start)   2 kilobytes   nametables over -   free-video throw ;
 
 ( ---------------------------------------------------------------------------- )
-(       Pictures                                                               )
+(       Sprite Pictures                                                        )
 ( ---------------------------------------------------------------------------- )
 (       address of index calculator         4 bytes                            )
 (       RAM address of tile index           2 bytes                            )
+(       sprite dimensions                   2 bytes                            )
 (       size of uncompressed data           2 bytes                            )
 (       xt of decompressor                  4 bytes                            )
 (       ROM picture data                    x bytes                            )
 ( ---------------------------------------------------------------------------- )
-{:} picture ( index-addr "name" -- ) create , {;}
+code pic.index   tos a1 move, -1 # tos move, [a1 4 +] tos h move, next
+code pic.size@   tos a1 move, tos clear, [a1 8 +] tos h move, next
+code pic.dims@   tos a1 move, tos clear, [a1 6 +] tos h move, next
+code pic.data    7 halves # tos add, next
+
+{:} sprite-picture ( dimensions  data-size  "name" -- )
+    create 0 , here h, half allot swap h, h, 0 , {;}
+
+( ---------------------------------------------------------------------------- )
+(       Tile Pictures                                                          )
+( ---------------------------------------------------------------------------- )
+(       unused                              4 bytes                            )
+(       RAM address of tile index           2 bytes                            )
+(       unused                              2 bytes                            )
+(       size of uncompressed data           2 bytes                            )
+(       xt of decompressor                  4 bytes                            )
+(       ROM picture data                    x bytes                            )
+( ---------------------------------------------------------------------------- )
+{:} tile-picture ( data-size  "name" -- )
+    create 0 , here h, half allot 0 h, h, 0 , {;}
+
+( ---------------------------------------------------------------------------- )
+(       Decompressors                                                          )
+( ---------------------------------------------------------------------------- )
+value (decomp-ram)      value (decomp-vram)
+
+\   Ultra Fast Tile Compression
+\   Original Author: SikTheHedgehog   github.com/sikthehedgehog/mdtools
+\   Ported with Modifications by WildChild83
+\   see file "system/importing/uftc.fs" for license details
+code (uftc1) ( src dest #tiles -- src' dest a1 #tiles )
+    [sp cell +] a2 move, [a2]+ d2 h move, a2 [sp cell +] move,
+    [a2 d2+ ih 0] a1 address, a1 push, next
+code (uftc2) ( src dest a1 #tiles -- )
+    a1 pull, a3 pull, a2 pull,
+    tos w dec, neg if tos pull, tp rpull, next, endif
+    sp d6 move, tp d5 move,
+    [a1]+ d1 h move, [a2 d1+ ih 0] sp address, [a1]+ d1 h move,
+    [a2 d1+ ih 0] tp address, [sp]+ [a3]+ h move, [tp]+ [a3]+ h move,
+    [sp]+ [a3]+ h move, [tp]+ [a3]+ h move, [sp]+ [a3]+ h move,
+    [tp]+ [a3]+ h move, [sp]+ [a3]+ h move, [tp]+ [a3]+ h move,
+    [a1]+ d1 h move, [a2 d1+ ih 0] sp address, [a1]+ d1 h move,
+    [a2 d1+ ih 0] tp address, [sp]+ [a3]+ h move, [tp]+ [a3]+ h move,
+    [sp]+ [a3]+ h move, [tp]+ [a3]+ h move, [sp]+ [a3]+ h move,
+    [tp]+ [a3]+ h move, [sp]+ [a3]+ h move, [tp]+ [a3]+ h move,
+    d5 tp move, d6 sp move, a2 push, a3 push, a1 push, next
+: uftc ( picture -- )
+    dup pic.size@ dup allocate throw to (decomp-ram) ( picture size )
+    dup allocate-video throw dup to (decomp-vram) ( picture size vram )
+    tile/ third pic.index h! swap pic.data (decomp-ram) third tile/ ( size src dest #tiles )
+    (uftc1) begin (uftc2) again half/ (decomp-ram) (decomp-vram) rot
+    move>video (decomp-ram) free throw ;
 
 ( ---------------------------------------------------------------------------- )
 rawcode (index*1)   next
@@ -145,16 +197,21 @@ code index ( picture  index -- tile )
     [a1] tos h add, [a2] jump, end
 
 ( ---------------------------------------------------------------------------- )
-: init-picture ( picture -- ) cell+ h@ $FF0000 + 0 swap h! ;
+: init-picture ( picture -- ) pic.index 0 swap h! ;
 
-: free-picture ( picture -- ior )
-    cell+ halfcount $FF0000 + dup h@ tiles 0 rot h! swap h@ free-video ;
+: free-picture ( picture -- )
+    dup pic.index h@ tiles swap pic.size@ free-video throw ;
 
-: load-picture ( picture -- ior )
-    
-;
+: load-picture ( picture -- )
+    dup pic.size@ allocate-video throw dup >r tile/ over pic.index h!
+    dup pic.data swap pic.size@ r> swap move>video ;
 
 ( ---------------------------------------------------------------------------- )
+synonym   sprites[  video-sprites[
+synonym  ]sprites  ]video-sprites
+
+: sprite ( x y picture -- ) dup pic.index h@ swap pic.dims@ 2swap video-sprite ;
+
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

@@ -21,13 +21,13 @@
             cell+  cells  char  close-file  cmove  cmove>  compare
                         count  cr  create  create-file
         d>s  decimal  defer  defer@  depth  drop  2drop  dup  2dup  ?dup
-            emit  execute  false  find-name  free  here  hex  hold
-                    i  immediate  include  invert  is  j  k
+        emit  execute  false  file-size  find-name  free  here  hex  hold
+                    i  immediate  include  invert  j  k
             lshift  max  min  move  negate  nip  2nip  :noname
-            off  on  or  over  2over  page  parse  parse-name  pick
-    r/o  r/w  refill  roll  rot  2rot  rshift  s>d  space  spaces  swap  2swap
-            throw  true  tuck  2tuck  type  value  variable  2variable
-                        w/o  within  write-file  xor
+        off  on  open-file  or  over  2over  page  parse  parse-name  pick
+                r/o  r/w  read-file  refill  roll  rot  2rot  rshift
+        s>d  space  spaces  swap  2swap  throw  true  tuck  2tuck  type
+            value  variable  2variable  w/o  within  write-file  xor
 
                             s>number?  s>unumber?
 
@@ -73,6 +73,8 @@
 : [ELSE]     postpone [ELSE]    ; immediate
 : [THEN]     postpone [THEN]    ; immediate
 : [ENDIF]    postpone [THEN]    ; immediate
+
+: is  postpone is ; immediate
 
 : s" state @ if postpone s" exit endif [char] " parse ; immediate
 

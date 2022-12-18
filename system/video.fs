@@ -289,14 +289,14 @@ synonym video-sprite- 8-        synonym video-sprite/ 8/
 
 80 video-sprites buffer: video-sprite-buffer    0 buffer: video-sprite-limit
 
-$0800                           $000 constant 1x1sprite $800 constant 3x1sprite
-    $0800 +field +flip          $100 constant 1x2sprite $900 constant 3x2sprite
-    $1000 +field +mirror        $200 constant 1x3sprite $A00 constant 3x3sprite
-         synonym +palette0 noop $300 constant 1x4sprite $B00 constant 3x4sprite
-    $2000 +field +palette1      $400 constant 2x1sprite $C00 constant 4x1sprite
-    $2000 +field +palette2      $500 constant 2x2sprite $D00 constant 4x2sprite
-    $2000 +field +palette3      $600 constant 2x3sprite $E00 constant 4x3sprite
-    $8000 +field +priority      $700 constant 2x4sprite $F00 constant 4x4sprite
+$0800                               $000 constant 1x1       $800 constant 3x1      
+    $0800 +field +flip              $100 constant 1x2       $900 constant 3x2      
+    $1000 +field +mirror            $200 constant 1x3       $A00 constant 3x3      
+         synonym +palette0 noop     $300 constant 1x4       $B00 constant 3x4      
+    $2000 +field +palette1          $400 constant 2x1       $C00 constant 4x1      
+    $2000 +field +palette2          $500 constant 2x2       $D00 constant 4x2      
+    $2000 +field +palette3          $600 constant 2x3       $E00 constant 4x3      
+    $8000 +field +priority          $700 constant 2x4       $F00 constant 4x4      
 drop
 
 hvalue video-sprite-ptr         cvalue video-sprite-link
