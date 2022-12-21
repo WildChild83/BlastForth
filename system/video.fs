@@ -289,37 +289,25 @@ synonym video-sprite- 8-        synonym video-sprite/ 8/
 
 80 video-sprites buffer: video-sprite-buffer    0 buffer: video-sprite-limit
 
-$0800                               $000 constant 1x1       $800 constant 3x1      
-    $0800 +field +flip              $100 constant 1x2       $900 constant 3x2      
-    $1000 +field +mirror            $200 constant 1x3       $A00 constant 3x3      
-         synonym +palette0 noop     $300 constant 1x4       $B00 constant 3x4      
-    $2000 +field +palette1          $400 constant 2x1       $C00 constant 4x1      
-    $2000 +field +palette2          $500 constant 2x2       $D00 constant 4x2      
-    $2000 +field +palette3          $600 constant 2x3       $E00 constant 4x3      
-    $8000 +field +priority          $700 constant 2x4       $F00 constant 4x4      
-drop
-
+$000 constant 1x1       $800 constant 3x1       $0800 constant mirror
+$100 constant 1x2       $900 constant 3x2       $1000 constant flip
+$200 constant 1x3       $A00 constant 3x3       $0000 constant palette0
+$300 constant 1x4       $B00 constant 3x4       $2000 constant palette1
+$400 constant 2x1       $C00 constant 4x1       $4000 constant palette2
+$500 constant 2x2       $D00 constant 4x2       $6000 constant palette3
+$600 constant 2x3       $E00 constant 4x3       $8000 constant priority
+$700 constant 2x4       $F00 constant 4x4
 hvalue video-sprite-ptr         cvalue video-sprite-link
 
 ( ---------------------------------------------------------------------------- )
-code video-sprites[ ( -- )
+code sprites[ ( -- )
     video-sprite-ptr [#] a2 address,
     video-sprite-buffer $FFFF and # [a2]+ h move, 0 # [a2]+ c move, next
-
-code video-sprite ( attrib  layout  x y -- )
-    video-sprite-ptr [#] a2 address, -1 # d1 move, [a2]+ d1 h move, d1 a1 move,
-    d2 clear, [a2] d2 c move, d2 c inc, d2 [a2] c move, 128 # tos h add,
-    tos [a1]+ h move, tos pull, half # sp add, [sp]+ d2 h or, d2 [a1]+ h move,
-    half # sp add, [sp]+ [a1]+ h move, 128 # tos h add, tos [a1]+ h move,
-    a1 -[a2] h move, tos pull, next
-
-code (]video-sprites) ( -- #halves )
+code (]sprites) ( -- #halves )
     tos push, -1 # tos move, video-sprite-ptr [#] tos h move, tos a1 move,
     0 # [a1 -5 +] c move, video-sprite-buffer $FFFF and # tos h sub,
     1 # tos h lsr, $FFFF # tos and, next
-
-: ]video-sprites ( -- ) 
-    video-sprite-buffer  sprite-table  (]video-sprites)  move>video ;
+: ]sprites ( -- ) video-sprite-buffer  sprite-table  (]sprites)  move>video ;
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

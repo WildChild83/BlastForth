@@ -25,8 +25,8 @@
                     i  immediate  include  invert  j  k
             lshift  max  min  move  negate  nip  2nip  :noname
         off  on  open-file  or  over  2over  page  parse  parse-name  pick
-                r/o  r/w  read-file  refill  roll  rot  2rot  rshift
-        s>d  space  spaces  swap  2swap  throw  true  tuck  2tuck  type
+        r/o  r/w  read-file  refill  restore-input  roll  rot  2rot  rshift
+    s>d  save-input  space  spaces  swap  2swap  throw  true  tuck  2tuck  type
             value  variable  2variable  w/o  within  write-file  xor
 
                             s>number?  s>unumber?

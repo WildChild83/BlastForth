@@ -118,6 +118,7 @@ synonym flag 0<>     synonym not 0=
 :  ?cell ( n -- n flag ) dup -2147483648 4294967296 within ;
 
 ( ---------------------------------------------------------------------------- )
+: cell ( -- u ) 1 cells ;
 : cellcount ( addr -- addr' n ) dup cell+ swap @ ;
 : demux  ( n u -- n1 n2 ) 2dup invert and -rot and ;
 : uppercase  ( c -- c' ) dup [ char a char z 1+ ] 2literal within 32 and - ;
