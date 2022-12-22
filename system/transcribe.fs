@@ -21,8 +21,8 @@
             cell+  cells  char  close-file  cmove  cmove>  compare
                         count  cr  create  create-file
         d>s  decimal  defer  defer@  depth  drop  2drop  dup  2dup  ?dup
-        emit  execute  false  file-size  find-name  free  here  hex  hold
-                    i  immediate  include  invert  j  k
+        emit  erase execute  false  file-size  fill  find-name  free
+            here  hex  hold  i  immediate  include  invert  j  k
             lshift  max  min  move  negate  nip  2nip  :noname
         off  on  open-file  or  over  2over  page  parse  parse-name  pick
         r/o  r/w  read-file  refill  restore-input  roll  rot  2rot  rshift
