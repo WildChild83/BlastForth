@@ -114,6 +114,9 @@ code (gavail2) ( bytes vramaddr -- bytes [vramaddr] )
 : available-video ( -- bytes ) 
     2 >autoinc (gavail1) begin (gavail2) again ;
 
+: first-video-region ( -- vram-addr  bytes )
+    2 >autoinc (gavail1) tuck ?if (gavail2) drop endif ;
+
 ( ---------------------------------------------------------------------------- )
 : nametables ( -- vram-addr ) $10000 foreground-table  min
                                      background-table  min

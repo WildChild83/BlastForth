@@ -108,6 +108,22 @@ create pal-name 40 allot        0 value rompal]
 : !rompalette ( "name" -- )
     parse-name pal-name 2dup c! 1+ swap cmove
     romspace dup to rompalette dup 2 + to rompal* 32 + to rompal] ;
+
+Forth definitions Importing
+create dopalette& asm
+    dfa push, 5 # tos h lsl, tos push, 16 # tos move, ' move>cram execute, end
+create do2palette& asm
+    dfa push, 5 # tos h lsl, tos push, 32 # tos move, ' move>cram execute, end
+create do3palette& asm
+    dfa push, 5 # tos h lsl, tos push, 48 # tos move, ' move>cram execute, end
+create do4palette& asm
+    dfa push, 5 # tos h lsl, tos push, 64 # tos move, ' move>cram execute, end
+{ : palette ( "name" -- ) host-only
+    save-input create restore-input throw \ !rompalette 
+    dopalette& codefield, !rompalette 0 h, 15 0 do -1 h, loop
+    does> @ compiling? if , exit endif 4 + ; }
+
+Importing definitions {
 : pal-addr ( rgb -- rgb addr )
     rompal* rompalette 2 + ?do dup i romh@ = if i unloop exit endif 2 +loop
     rompal* dup rompal] u>= abort" Palette overflow!"  dup 2+ to rompal* ;
@@ -118,7 +134,7 @@ create pal-name 40 allot        0 value rompal]
 : rompalette? ( -- ) rompalette 0= abort" Palette has not been defined!" ;
 
 : .pal-info ( -- )
-    rompalette? pal-name count type ."  has " pal-left . ." slots remaining" ;
+    rompalette? pal-name count type ."  has " pal-left . ." slots left" ;
 : .pal-data ( -- ) cr rompal* rompalette ?do i romh@ hex.3 2 +loop ;
 
 ( ---------------------------------------------------------------------------- )
@@ -171,13 +187,6 @@ Forth definitions Importing {
 
 : import: ( "filename" -- )     parse-name  import ;
 : import" ( "filename" -- ) [char] " parse  import ;
-
-: palette ( "name" -- ) 
-    save-input } create { restore-input throw
-    !rompalette 0 h, 15 0 do -1 h, loop
-    } ;code ( n -- )
-        dfa push, 5 # tos h lsl, tos push,
-        16 # tos move, ' move>cram execute, end {
 
 : sprite ( n -- ) to sprite-size ;
 

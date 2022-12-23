@@ -110,24 +110,28 @@ defer #color
 : rgb8b@ ( addr --rgb ) count #color ;
 : rgb1555 ( -- ) $8000 to amask $7C00 to rmask $03E0 to gmask $001F to bmask ;
 
+defer rle-fill+     defer rle-move+
+: rle ( -- )
+    image area erase
+    image top-down? not if area + pitch - endif dup
+    pixel-array @ rlength bounds
+    ?do i c@ ?dup if i 1+ c@ rle-fill+ 2
+        else
+            i 1+ c@ case
+                0 of drop pitch top-down? if + else - endif dup 2 endof
+                1 of 2drop unloop exit endof
+                2 of i 3 + c@ cells pitch * tuck i 2 + c@ cells + 
+                     top-down? if + >r + else - >r - endif r> 4 endof
+                i 2 + -rot dup >r rle-move+ r> 2/ 1+ -2 and 2 + dup
+            endcase
+        endif
+    +loop 2drop ;
+
 : 8fill+ ( addr u c -- addr' )
     #color -rot 0 ?do 2dup ! cell+ loop nip ;
 : 8move+ ( src dest u -- dest' )
     0 ?do over c@ #color over ! cell+ >r 1+ r> loop nip ;
-: rle8 ( -- )
-    image dup  area erase  dup  pixel-array @ rlength bounds
-    ?do i c@ ?dup if i 1+ c@ 8fill+ 2
-        else
-            i 1+ c@ case
-                0 of drop pitch + dup 2 endof
-                1 of 2drop unloop exit endof
-                2 of i 3 + c@ pitch * tuck i 2 + c@ + + ( img1 dy img2' )
-                     >r + r> 4 endof
-                ( img1 img2 c )
-                i 2 + -rot dup >r 8move+ r> 2 + dup 
-            endcase
-        endif
-    +loop 2drop ;
+: rle8 ( -- ) ['] 8fill+ is rle-fill+  ['] 8move+ is rle-move+  rle ;
 
 : 2#color ( c -- rgb2 rgb1 ) dup 15 and #color swap 4 rshift #color ;
 : 4fill+ ( addr u c' -- addr' )
@@ -136,21 +140,7 @@ defer #color
 : 4move+ ( src dest u -- dest' )
     dup >r 2/ 0 ?do over c@ 2#color third ! over cell+ ! 2 cells + >r 1+ r> loop
     r> 1 and if over c@ 4 rshift #color over ! cell+ endif nip ;    
-: rle4 ( -- )
-    image area erase
-    image top-down? not if area + pitch - endif dup
-    pixel-array @ rlength bounds
-    ?do i c@ ?dup if i 1+ c@ 4fill+ 2
-        else
-            i 1+ c@ case
-                0 of drop pitch top-down? if + else - endif dup 2 endof
-                1 of 2drop unloop exit endof
-                2 of i 3 + c@ cells pitch * tuck i 2 + c@ cells + 
-                     top-down? if + >r + else - >r - endif r> 4 endof
-                i 2 + -rot dup >r 4move+ r> 2/ 1+ -2 and 2 + dup
-            endcase
-        endif
-    +loop 2drop ;
+: rle4 ( -- ) ['] 4fill+ is rle-fill+  ['] 4move+ is rle-move+  rle ;
 
 : bmp-inner-loop ( addr u -- ) bounds ?do pixel@+ i ! cell +loop ;
 : bmp-outer-loop  ( lim u -- ) ?do i pitch bmp-inner-loop pitch negate +loop ;
