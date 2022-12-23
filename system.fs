@@ -128,10 +128,10 @@ include system/interrupts.fs    \ vertical and horizontal blank handlers
 include system/allocate.fs      \ dynamic memory manager
 include system/video.fs         \ video display processor interface
 include system/graphics.fs      \ graphical asset manager
+include system/import.fs        \ graphical asset loader
 include system/text.fs          \ text display, terminal output
 include system/exceptions.fs    \ default exception handlers
 include system/strings.fs       \ dynamic strings
-include system/import.fs        \ graphical asset loader
 include system/input.fs         \ read controllers
 
 ( ---------------------------------------------------------------------------- )

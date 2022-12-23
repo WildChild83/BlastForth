@@ -102,40 +102,54 @@ Importing definitions {
 (       Palette Management                                                     )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
-0 value rompalette              0 value rompal*
-create pal-name 40 allot        0 value rompal]
+0 value active-palette
 
-: !rompalette ( "name" -- )
-    parse-name pal-name 2dup c! 1+ swap cmove
-    romspace dup to rompalette dup 2 + to rompal* 32 + to rompal] ;
+: palette, ( n cf-addr "name" -- ) host-only
+    save-input create restore-input throw
+    here to active-palette
+    codefield,  1 host, parse-name dup hostc, 0 ?do count hostc, loop drop
+    0 ?do 0 h, 15 0 do -1 h, loop loop ;
+: do-palette, ( -- addr ) compiling? if @ , exit endif to active-palette ;
 
 Forth definitions Importing
 create dopalette& asm
     dfa push, 5 # tos h lsl, tos push, 16 # tos move, ' move>cram execute, end
-create do2palette& asm
-    dfa push, 5 # tos h lsl, tos push, 32 # tos move, ' move>cram execute, end
-create do3palette& asm
-    dfa push, 5 # tos h lsl, tos push, 48 # tos move, ' move>cram execute, end
-create do4palette& asm
-    dfa push, 5 # tos h lsl, tos push, 64 # tos move, ' move>cram execute, end
-{ : palette ( "name" -- ) host-only
-    save-input create restore-input throw \ !rompalette 
-    dopalette& codefield, !rompalette 0 h, 15 0 do -1 h, loop
-    does> @ compiling? if , exit endif 4 + ; }
+\ create do2palette& asm
+\    dfa push, 5 # tos h lsl, tos push, 32 # tos move, ' move>cram execute, end
+\ create do3palette& asm
+\    dfa push, 5 # tos h lsl, tos push, 48 # tos move, ' move>cram execute, end
+\ create do4palette& asm
+\    dfa push, 5 # tos h lsl, tos push, 64 # tos move, ' move>cram execute, end
 
 Importing definitions {
+: active-addr    ( -- romaddr ) active-palette @ 4 + ;
+: active-color ( n -- romaddr ) 2* active-addr + ;
+: active-index   ( -- addr )    active-palette cell+ ;
+: active-size ( -- n )
+    active-palette @ rom@ case
+        dopalette&  of 16 endof
+       \ do2palette& of 32 endof
+       \ do3palette& of 48 endof
+       \ do4palette& of 64 endof
+        -1 abort" Invalid palette!"
+    endcase ;
+
 : pal-addr ( rgb -- rgb addr )
-    rompal* rompalette 2 + ?do dup i romh@ = if i unloop exit endif 2 +loop
-    rompal* dup rompal] u>= abort" Palette overflow!"  dup 2+ to rompal* ;
+    active-addr 2 + active-index @ 1- 2* bounds
+    ?do dup i romh@ = if i unloop exit endif 2 +loop
+    active-index @ dup active-size > abort" Palette overflow!"
+    dup 1+ dup 16 mod 0= 1 and + active-index ! active-color ;
 : pal-index ( rgb -- c ) 
-    dup 0< if drop 0 exit endif   pal-addr  tuck romh!  rompalette - 2/ ;
-: pal-used ( -- n ) rompal* rompalette - 2/ ;
-: pal-left ( -- n ) rompal] rompal* - 2/ ;
-: rompalette? ( -- ) rompalette 0= abort" Palette has not been defined!" ;
+    dup 0< if drop 0 exit endif  pal-addr  tuck romh!  active-addr - 2/ ;
+: pal-name ( -- addr u ) active-palette cell+ cell+ count ;
+: pal-left ( -- n ) active-size active-index @ - dup 16 / - ;
 
 : .pal-info ( -- )
-    rompalette? pal-name count type ."  has " pal-left . ." slots left" ;
-: .pal-data ( -- ) cr rompal* rompalette ?do i romh@ hex.3 2 +loop ;
+    pal-name type 
+    pal-left ?dup if ."  has " . ." slots left" else ."  is full" endif ;
+: .pal-data ( -- ) 
+    0 active-addr active-index @ 2* bounds
+    ?do ?dup if 1- else 15 cr endif i romh@ hex.3 2 +loop drop ;
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
@@ -155,18 +169,21 @@ Importing definitions {
 ( ---------------------------------------------------------------------------- )
 -1 value sprite-size
 
+: sprite-width  ( -- u ) sprite-size 10 rshift 3 and 1+ ;
+: sprite-height ( -- u ) sprite-size  8 rshift 3 and 1+ ;
+
 ( ---------------------------------------------------------------------------- )
 : cleanup ( -- ) image free throw  -1 to sprite-size ;
 
 : compile-tile ( addr -- ) 8 0 do dup dword@ >4< , pitch + loop drop ;
+: compile-sprite-column ( addr -- )
+    pitch 8 * tuck sprite-height * bounds ?do i compile-tile dup +loop drop ;
+: compile-sprite-frame ( addr -- )
+    sprite-width 4 * bounds ?do i compile-sprite-column 4 +loop ;
 
 : compile-sprite ( "name" -- )
     sprite-size area sprite-picture
-    image  0 + compile-tile
-    image  4 + compile-tile
-    image pitch 8 * + 0 + compile-tile
-    image pitch 8 * + 4 + compile-tile
-    ;
+    image  compile-sprite-frame ;
 
 : compile-image ( "name" -- )
     sprite-size 0< abort" Tile imports not implemented yet."
@@ -174,7 +191,7 @@ Importing definitions {
 
 : import ( addr u "name" -- )
     [ Verbose ] [IF] cr ." Import " 2dup type 4 spaces [THEN]
-    rompalette?  load-image-file  convert-image  compile-image
+    load-image-file  convert-image  compile-image
     [ Verbose ] [IF] area . ." bytes" 4 spaces .pal-info [THEN]
     cleanup ;
 
@@ -185,12 +202,20 @@ Importing definitions {
 ( ---------------------------------------------------------------------------- )
 Forth definitions Importing {
 
-: import: ( "filename" -- )     parse-name  import ;
-: import" ( "filename" -- ) [char] " parse  import ;
+: import: ( "filename" -- ) host-only     parse-name  import ;
+: import" ( "filename" -- ) host-only [char] " parse  import ;
 
-: sprite ( n -- ) to sprite-size ;
+: sprite ( n -- ) host-only to sprite-size ;
 
-: .colors ( -- ) cr .pal-info .pal-data ;
+: palette ( "name" -- ) host-only 1 dopalette& palette, does> do-palette, ;
+
+: +!color       ( rgb -- ) host-only pal-index drop ;
+:  !color ( rgb index -- ) host-only active-color romh! ;
+:  @color ( index -- rgb ) host-only active-color romh@ ;
+: .colors           ( -- ) host-only cr .pal-info .pal-data ;
+
+: rgb ( red green blue -- rgb ) host-only
+    7 and 5 lshift swap 7 and 2* + 4 lshift swap 7 and 2* + ;
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
