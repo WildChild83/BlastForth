@@ -98,14 +98,15 @@ code (<exit>) tp rpull, next
 
 : (crash-system) ( sp  rp  throw-code -- )
     ['] (<exit>) is exit
+    (init-video)
     begin dma? not until
     2 >autoinc $0000 write-vram 64 kilobytes cell/ 0 do 0 !video loop
-    (init-video)
-    2 >autoinc $C000 to foreground-table $E000 to background-table
-    +h320 +v224 64x64planes 255 >hint-counter set-video-config
+    2 >autoinc $C000 to foreground-address $E000 to background-address
+    +h320 +v224 64x64planes 255 >hint-counter  0 +top-window
+    set-video-config
     $00 write-cram $0000 h!video $0EEE h!video
     1 to text-color-index       $0000 load-glyph-data  ['] <emit> is emit
-    0 to attributes    foreground-table terminal page  ['] <type-words> is type
+    0 to attributes  foreground-address terminal page  ['] <type-words> is type
     +video
     
     cr cr dup exception>string type    

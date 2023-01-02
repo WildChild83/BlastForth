@@ -31,8 +31,8 @@ Forth definitions
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
 (       Graphics Free Node is 4 bytes, located in VRAM                         )
-(           - first 2 bytes = size of this free region                         )
-(           -  next 2 bytes = address of next node                             )
+(           - first 2 bytes = address of next node                             )
+(           -  next 2 bytes = size of this free region                         )
 (       Address of First Node is in system RAM   ["gnode"]                     )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
@@ -71,20 +71,21 @@ code (galloc3) ( prev this this> bytes -- vramaddr ior )
 ( ---------------------------------------------------------------------------- )
 code (gfree1) ( vramaddr bytes -- vramaddr prev next bytes )
     DEBUG [IF]
-        tos d1 move, z= if -267 # tos move, tp rpull, next, endif
+        d2 pull, tos d1 move, z= if -267 # tos move, tp rpull, next, endif
         $FFFF000F # d1 and, z<> if -267 # tos move, tp rpull, next, endif
-        d1 peek, $FFFF000F # d1 and,
-        z<> if -269 # tos move, tp rpull, next, endif
+        d2 d1 move, $FFFF000F # d1 and,
+        z<> if -269 # tos move, tp rpull, next, endif d2 push,
     [THEN] d1 clear, d1 push, (gnode) [#] d1 h move, d1 push, next
 code (gfree2) ( vramaddr prev next bytes -- vramaddr prev' next' bytes flag )
     d1 pull, d1 h test, z= if d1 push, tos push, -1 # tos move, next, endif
-    d2 pull, [sp] d1 h compare,
+    d2 pull, [sp half +] d1 h compare,
     ugt if d2 push, d1 push, tos push, -1 # tos move, next, endif
     d1 push, $FFFF # d1 and, 2 # d1 lsl, 2 # d1 h lsr, d1 swap,
     d1 video-ctrl [#] move, video-data [#] d1 move,
     d1 swap, d1 push, tos push, tos clear, next
 code (gfree3) ( vramaddr prev next bytes -- ior )
-    video-ctrl [#] a1 address, d1 pull, d2 pull, d3 pull, \ D1=next, D2=prev, D3=vramaddr
+    video-ctrl [#] a1 address, d1 pull, d2 pull, d3 pull,
+    \ D1=next, D2=prev, D3=vramaddr
     d1 h test, z<> if d3 d4 h move, tos d4 h add, d4 d1 h compare, z= if
         d4 clear, d1 d4 h move, 2 # d4 lsl, 2 # d4 h lsr, d4 swap, d4 [a1] move,
         [a1 -4 +] d4 move, d4 tos h add, d4 swap, d4 d1 h move, endif endif
@@ -92,7 +93,7 @@ code (gfree3) ( vramaddr prev next bytes -- ior )
         d1 swap, tos d1 h move, d3 (gnode) [#] h move,
         2 # d3 lsl, 2 # d3 h lsr, $4000 # d3 h or, d3 swap,
         d3 [a1] move, d1 [a1 -4 +] move, tos clear, next, endif
-    d2 d4 h move, d2 swap, d2 d4 h add, d4 d3 h compare, z<> if
+    d2 d4 h move, d2 swap, d2 d4 h add, d3 d4 h sub, z<> if
         d2 h clear, d2 swap, 2 # d2 lsl, 2 # d2 h lsr, $4000 # d2 h or,
         d2 swap, d2 [a1] move, d3 [a1 -4 +] h move,
         else d2 tos h add, d2 swap, d2 d3 h move, endif
@@ -118,30 +119,46 @@ code (gavail2) ( bytes vramaddr -- bytes [vramaddr] )
     2 >autoinc (gavail1) tuck ?if (gavail2) drop endif ;
 
 ( ---------------------------------------------------------------------------- )
-: nametables ( -- vram-addr ) $10000 foreground-table  min
-                                     background-table  min
-                                         window-table  min
-                                         sprite-table  min
-                                         scroll-table  min ;
+: nametables ( -- vram-addr ) $10000 foreground-address  min
+                                     background-address  min
+                                         window-address  min
+                                         sprite-address  min
+                                         scroll-address  min ;
 : init-graphics ( -- )
     0 to (gnode)   2 kilobytes   nametables over -   free-video throw ;
+
+: (window-memory) ( -- )
+    window-start  window-address -  -32 and
+    ?if window-address swap free-video throw endif
+    sprite-address  window-end -  31 + -32 and
+    ?if window-end swap free-video throw endif ;
+: (plane-memory) ( -- )
+    plane-size * 2* dup 8192 < if
+        dup foreground-address + 8192 third - free-video throw
+        dup background-address + 8192 third - free-video throw
+    endif drop ;
+: setup-graphics ( -- )
+    $A000 to window-address         $C000 to foreground-address
+    $B800 to sprite-address         $E000 to background-address
+    $BC00 to scroll-address         set-video-config
+    init-graphics (plane-memory) ; \ (window-memory) ;
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
 (       Sprite Pictures                                                        )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
-(       address of index calculator         4 bytes                            )
+(       address of index calculator         2 bytes                            )
 (       RAM address of tile index           2 bytes                            )
 (       sprite dimensions                   2 bytes                            )
 (       size of uncompressed data           2 bytes                            )
-(       xt of decompressor                  4 bytes                            )
+(       xt of decompressor                  2 bytes                            )
 (       ROM picture data                    x bytes                            )
 ( ---------------------------------------------------------------------------- )
-code pic.index   tos a1 move, -1 # tos move, [a1 4 +] tos h move, next
-code pic.size@   tos a1 move, tos clear, [a1 8 +] tos h move, next
-code pic.dims@   tos a1 move, tos clear, [a1 6 +] tos h move, next
-code pic.data    7 halves # tos add, next
+code pic.index   tos a1 move, -1 # tos move, [a1 2 +] tos h move, next
+code pic.size@   tos a1 move, tos clear, [a1 6 +] tos h move, next
+code pic.dims@   tos a1 move, tos clear, [a1 4 +] tos h move, next
+code pic.data    5 halves # tos add, next
 
 rawcode (x1)  return, end
 rawcode (x2)  d1 d1 h add,  return, end
@@ -164,22 +181,26 @@ rawcode (x16) 4 # d1 h lsl, return, end
 
 ( ---------------------------------------------------------------------------- )
 {:} sprite-picture ( dimensions  data-size  "name" -- )
-    create over (index-addr) , here h, half allot swap h, h, 0 , {;}
+    create over (index-addr) h, here h, half allot swap h, h, 0 h, {;}
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
 (       Tile Pictures                                                          )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
-(       unused                              4 bytes                            )
+(       tile height                         2 bytes                            )
 (       RAM address of tile index           2 bytes                            )
-(       unused                              2 bytes                            )
+(       tile width                          2 bytes                            )
 (       size of uncompressed data           2 bytes                            )
-(       xt of decompressor                  4 bytes                            )
+(       xt of decompressor                  2 bytes                            )
 (       ROM picture data                    x bytes                            )
 ( ---------------------------------------------------------------------------- )
-{:} tile-picture ( data-size  "name" -- )
-    create 0 , here h, half allot 0 h, h, 0 , {;}
+code    pic.height@     tos a1 move, tos clear, [a1] tos h move, next
+synonym pic.width@      pic.dims@
+
+( ---------------------------------------------------------------------------- )
+{:} tile-picture ( width height data-size  "name" -- )
+    create -rot h, here h, half allot h, h, 0 h, {;}
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
@@ -232,17 +253,27 @@ code (uftc2) ( src dest a1 #tiles -- )
 
 : load-picture ( picture -- )
     dup pic.size@ allocate-video throw dup >r tile/ over pic.index h!
-    dup pic.data swap pic.size@ r> swap move>video ;
+    dup pic.data swap pic.size@ 2/ r> swap move>video ;
 
 ( ---------------------------------------------------------------------------- )
 code stamp ( x y attrib index sprite -- )
-    tos a1 move, d1 pull, [a1]+ a2 move, [a2] jump-sub, -1 # d2 move,
+    tos a1 move, d1 pull, [a1]+ a2 h move, [a2] jump-sub, -1 # d2 move,
     [a1]+ d2 h move, d2 a2 move, [a2] d1 h add, half # sp add, [sp]+ d1 h add,
     d1 swap, [a1]+ d1 h move, video-sprite-ptr [#] a2 address, -1 # d2 move,
     [a2]+ d2 h move, d2 a1 move, [a2] d1 c move, d1 c inc, d1 [a2] c move,
     tos pull, 128 # tos h add, tos [a1]+ h move, d1 swap, d1 [a1]+ move,
     tos pull, 128 # tos h add, tos [a1]+ h move, a1 -[a2] h move, tos pull,
     next
+
+code sprite.index ( index sprite -- tile )
+    tos a1 move, d1 pull, [a1]+ a2 move, [a2] jump-sub, -1 # d2 move,
+    [a1]+ d2 h move, d2 a2 move, [a2] d1 h add, d1 tos move, next
+
+hvalue sprite-addr
+
+: stitch ( x y attrib index sprite -- )
+    sprite.index + plane-size ( x y attrib' width height )
+;
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

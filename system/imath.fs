@@ -48,8 +48,8 @@ rawcode (32/32) \ TOS=divisor, D1=dividend, quotient=D2, modulus=D3
     d2 clear, d3 clear, 32 # d4 move,
     begin 1 # d1 lsl, 1 # d3 roxl, d4 h dec, d3 tos compare, ult= until
     1 # d3 lsr, 1 # d1 roxr,
-    d4 begin 1 # d1 lsl, 1 # d3 roxl, d3 d5 move, tos d5 sub,
-             1 # d2 roxl, 0 # d2 change-bit, z= if d5 d3 move, endif loop
+    d4 do 1 # d1 lsl, 1 # d3 roxl, d3 d5 move, tos d5 sub,
+          1 # d2 roxl, 0 # d2 change-bit, z= if d5 d3 move, endif loop
     return, end
 code u/mod ( u1 u2 -- mod quot )
     d1 pull, $10000 # tos compare, ult if
@@ -94,8 +94,8 @@ rawcode (64/32) \ TOS=divisor, D2:D1=dividend, quotient=D3, modulus=D4
     begin 1 # d1 lsl, 1 # d2 roxl, 1 # d4 roxl, d5 h dec, d4 tos compare,
         ult= until
     1 # d4 lsr, 1 # d2 roxr, 1 # d1 roxr,
-    d5 begin 1 # d1 lsl, 1 # d2 roxl, 1 # d4 roxl, d4 d6 move, tos d6 sub,
-             1 # d3 roxl, 0 # d3 change-bit, z= if d6 d4 move, endif loop
+    d5 do 1 # d1 lsl, 1 # d2 roxl, 1 # d4 roxl, d4 d6 move, tos d6 sub,
+          1 # d3 roxl, 0 # d3 change-bit, z= if d6 d4 move, endif loop
     return, end
 code um/mod ( udlo udhi u -- mod quot )
     d2 pull, d1 pull, (64/32) subroutine, d4 push, d3 tos move, next

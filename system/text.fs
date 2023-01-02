@@ -91,16 +91,17 @@ create glyph-data  bytes[
 cvalue  text-color-index
 
 rawcode (load-glyph-data) \ A1=video data, A2=glyph data, TOS=color index
-    7 d5 do [a2]+ d1 b move, 8 d4 do 1 # d1 b rol, 0 # d1 test-bit, d2 z<> set?,
-    tos d2 b and, 4 # d3 lsl, d2 d3 b or, loop d3 [a1] move, loop return, end
+    d5 7 for [a2]+ d1 b move, d4 8 for 1 # d1 b rol, 0 # d1 test-bit,
+    d2 z<> set?, tos d2 b and, 4 # d3 lsl, d2 d3 b or, loop d3 [a1] move, loop
+    return, end
 
 code load-glyph-data ( vramaddr -- )
     video-data [#] a1 address, glyph-data [#] a2 address,
     $8F02 # [a1 4 +] h move, 2 # tos lsl, 2 # tos h lsr,
     $4000 # tos or, tos swap, tos [a1 4 +] move,
     text-color-index [#] tos b move, 15 # tos b and, d7 clear,
-    62 d6 do (load-glyph-data) subroutine, d7 [a1] move, loop
-     2 d6 do d7 [a1] move, (load-glyph-data) subroutine, loop
+    d6 62 for (load-glyph-data) subroutine, d7 [a1] move, loop
+    d6  2 for d7 [a1] move, (load-glyph-data) subroutine, loop
     tos pull, next
 
 ( ---------------------------------------------------------------------------- )

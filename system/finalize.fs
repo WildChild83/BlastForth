@@ -38,7 +38,7 @@ Forth definitions
     endif endif endif
 
     \ clear System RAM and CPU registers
-    rp clear, $deadce11 # d1 move, 64 kilobytes cell/ d2 do d1 rpush, loop
+    rp clear, $deadce11 # d1 move, d2 64 kilobytes cell/ for d1 rpush, loop
     [rp]+ [[ d1 d2 d3 d4 d5 d6 d7 tos a1 a2 a3 $200C tp sp rp np ]] movem,
 
     \ initialize stack pointers
@@ -58,7 +58,7 @@ Forth definitions
 
     \ video hardware
     (init-video) begin dma? not until -video
-    clear-vram   default-video-config  init-dma  init-graphics
+    clear-vram   default-video-config  init-dma
     ['] noop dup  is (scrollX)  is (scrollY)
     ['] default-vblank is vertical-blank-handler
     0 0 planeX  0 0 planeY
@@ -70,7 +70,7 @@ Forth definitions
 
     \ terminal text display
     15 to text-color-index       $0000 load-glyph-data   ['] <emit> is emit
-     0 to attributes    foreground-table terminal page   ['] <type> is type
+     0 to attributes  foreground-address terminal page   ['] <type> is type
 
     2 >autoinc  interrupts  +video  +vbi
     
@@ -81,7 +81,12 @@ Forth definitions
     DEBUG [IF] dup 0= if drop -265 endif [THEN] crash-system ;
 
 ( ---------------------------------------------------------------------------- )
+( **************************************************************************** )
+(       ROM End Header Field                                                   )
+( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
+RomEndField [IF] { filesize @ 1- romend rom! } [THEN]
+
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

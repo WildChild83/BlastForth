@@ -8,15 +8,13 @@
 (                                                                              )
 (       Dependencies:                                                          )
 (           - glossary.fs                                                      )
-(           - SizeOfROM must be defined                                        )
+(           - Verbose must be defined                                          )
 (                                                                              )
 ( ---------------------------------------------------------------------------- )
 Host definitions
 
-variable rom        SizeOfROM allocate throw  rom !
+variable rom        4 megabytes allocate throw  rom !
 variable rom*       rom @ rom* !
-
-Verbose [IF] cr SizeOfROM .bytes .( allocated for ROM file. ) [THEN]
 
 : >1< ( n -- c ) $FF and ;
 : >2< ( n -- u ) dup  8 rshift >1< swap >1<  8 lshift or ;
@@ -54,14 +52,17 @@ Host definitions
     cr depth if ." STACK LEAK!  " .s cr endif ;
 
 Forth definitions {
-: printrom ( -- ) rom* @ rom @ 512 + ?do i c@ hex. loop cr freerom ;
+variable filesize
+: !filesize romspace 1 begin 2* 2dup <= until nip 512 kilobytes max filesize ! ;
+: printrom ( -- ) rom* @ rom @ ?do i c@ hex. loop cr freerom bye ;
 : romfile  ( addr u -- )
-    finalize
+    !filesize  finalize
     cr 2dup Verbose IF ." Program size: " ELSE type ." , " THEN romstats
+    filesize @ romspace - zeroes,
     w/o bin create-file throw >r
         rom @ rom* @ over - r@ write-file throw
         r> close-file throw
-    Verbose IF cr ." ROM file created: " type ." , " SizeOfROM .bytes THEN
+    Verbose IF cr ." ROM file created: " type ." , " filesize @ .bytes THEN
     freerom bye ;
 : romfile: ( "name" -- ) parse-name romfile ;
 : romfile" ( "name" -- ) [char] " parse romfile ;

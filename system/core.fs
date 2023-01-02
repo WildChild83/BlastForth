@@ -68,12 +68,10 @@ Forth definitions
 { ' pick }      anon 2 # tos lsl,
                     [sp tos+ 0] tos move, next      host/target: pick
 { ' roll }
-    anon tos test, z= if tos pull, next, endif
-        tos d1 move, 2 # tos lsl,
-        [sp tos+ 4 +] a1 address, [a1 -4 +] a2 address,
-        [a2] tos move, d6 begin -[a2] -[a1] move, loop 4 # sp add, next
+    anon tos d1 h move, 2 # tos h lsl,
+        [sp tos+ ih 0] a2 address, [a2 4 +] a1 address,
+        [a2] tos move, d1 do -[a2] -[a1] move, loop 4 # sp add, next
                                                     host/target: roll
-
 synonym >body cell+
 
 { :noname 1+ -2 and ; } anon tos inc, -2 # tos b and, next host/target: aligned
@@ -124,8 +122,8 @@ code fourth     tos push, [sp 3 cells +] tos move, next
 code  >r        tos rpush, tos  pull, next
 code  r>        tos  push, tos rpull,  next
 code 2>r        [sp]+ rpush, tos rpush, tos pull, next
-code 2r@        tos push, tos rpeek, [rp cell +] push, next
-code 2r>        tos push, tos rpull, -[sp] rpull, next
+code 2r@        tos push, tos rpeek, [rp cell +] -[sp] move, next
+code 2r>        tos push, tos rpull, [rp]+ -[sp] move, next
 code  i         tos push, tos rpeek, next                   aka r@
 code  i'        tos push, [rp   cell  +] tos move, next     aka rsecond
 code  j         tos push, [rp 2 cells +] tos move, next     aka rthird
@@ -218,30 +216,28 @@ code under-     tos [sp cell +] sub, tos pull, next
 (       Block Operations                                                       )
 ( ---------------------------------------------------------------------------- )
 code cmove ( source dest length -- )
-    a2 pull, a1 pull, tos h dec, pos if
-    tos begin [a1]+ [a2]+ c move, loop endif tos pull, next
+    a2 pull, a1 pull, tos do [a1]+ [a2]+ c move, loop tos pull, next
 
 code cmove> ( source dest length -- )
-    a2 pull, tos a2 h add, a1 pull, tos a1 h add, tos h dec, pos if
-    tos begin -[a1] -[a2] c move, loop endif tos pull, next
+    a2 pull, tos a2 h add, a1 pull, tos a1 h add,
+    tos do -[a1] -[a2] c move, loop tos pull, next
 
 code move ( source dest length -- )
     tos test, z= if 2 cells # sp add, tos pull, next, endif
     a2 pull, a1 pull, a2 d2 h move, a1 d1 h move, d2 d1 h xor,
     0 # d1 test-bit, z<> if
-        a1 a2 compare, ult if tos h dec, tos begin [a1]+ [a2]+ c move, loop
-        else tos a1 h add, tos a2 h add,
-             tos h dec, tos begin -[a1] -[a2] c move, loop
+        a1 a2 compare, ult if tos do [a1]+ [a2]+ c move, loop
+        else tos a1 h add, tos a2 h add, tos do -[a1] -[a2] c move, loop
         endif tos pull, next, endif
     a1 a2 compare, ult if
         0 # d2 test-bit, z<> if [a1]+ [a2]+ c move, tos dec, endif
-        2 # tos ror, tos h dec, pos if tos begin [a1]+ [a2]+ move, loop endif
+        2 # tos ror,  tos do [a1]+ [a2]+   move, loop
         1 # tos rol, cset if [a1]+ [a2]+ h move, endif
         1 # tos rol, cset if [a1]+ [a2]+ c move, endif
     else
         tos a1 add, tos a2 add, a2 d2 h move,
         0 # d2 test-bit, z<> if -[a1] -[a2] c move, tos dec, endif
-        2 # tos ror, tos h dec, pos if tos begin -[a1] -[a2] move, loop endif
+        2 # tos ror,  tos do -[a1] -[a2]   move, loop
         1 # tos rol, cset if -[a1] -[a2] h move, endif
         1 # tos rol, cset if -[a1] -[a2] c move, endif
     endif tos pull, next
@@ -251,7 +247,7 @@ code fill ( addr length c -- )
     a1 pull, a1 d2 move, 0 # d2 test-bit, z<> if tos [a1]+ c move, d1 dec, endif
     tos d2 c move, tos c rpush, tos h rpull,
     d2 tos c move, tos d2 h move, tos swap, d2 tos h move,
-    2 # d1 ror, d1 h dec, pos if d1 begin tos [a1]+ move, loop endif
+    2 # d1 ror,   d1 do tos [a1]+   move, loop
     1 # d1 rol, cset if tos [a1]+ h move, endif
     1 # d1 rol, cset if tos [a1]+ c move, endif tos pull, next
 
@@ -449,8 +445,7 @@ code within d1 pull, d1 tos sub, d2 pull, d1 d2 sub,
             d2 tos compare, tos ugt set?, tos c extend, next
 
 ( ---------------------------------------------------------------------------- )
-code ms ( n -- )
-    tos test, gt if tos begin 708 d1 do loop loop endif tos pull, next
+code ms ( n -- ) tos do   d1 708 for loop   loop   tos pull, next
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

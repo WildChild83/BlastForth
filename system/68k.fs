@@ -10,9 +10,6 @@
 (           - glossary.fs                                                      )
 (           - romfile.fs                                                       )
 (                                                                              )
-(       TODO:                                                                  )
-(           - testing                                                          )
-(                                                                              )
 ( ---------------------------------------------------------------------------- )
 Forth definitions       Glossary Assembler definitions {
 
@@ -417,15 +414,19 @@ $A000 make [[
     dup displacement> ?schar not disp-error
     $FF and rot $6000 +cc + swap romh! clean ;   aka endif
 
-: ahead  ( -- cc orig )              no } if { ;
+: ahead  ( -- cc orig )              yes romspace 0 h, ;
 : else   ( cc orig -- cc orig )      } ahead { 2swap } then { ;
 : while  ( dest cc -- cc orig dest ) } if { rot ;
 : repeat ( cc orig dest -- )         } again then { ;
 
-: do ( n reg -- reg dest )
-    1arg d' <> invalid-error swap 1- } # { third h move, } begin { ;
-: loop  ( reg dest -- ) displacement dec-branch, ;
-: loop? ( reg dest cc -- ) $100 xor >r displacement r> dec-branch?, ;
+: for ( reg n -- orig reg dest )
+    >r 1arg d' <> invalid-error  r> 1- dup 0< imm-error
+    } # { third h move, 0 swap } begin { ;
+: do ( reg -- orig reg dest ) romspace 0 h, swap } begin { ;
+: (endfor) ( orig -- ) ?dup if yes swap } then { endif ;
+: loop  ( orig reg dest -- ) rot (endfor) displacement dec-branch, ;
+: loop? ( orig reg dest cc -- )
+    $100 xor >r rot (endfor) displacement r> dec-branch?, ;
 
 ( ---------------------------------------------------------------------------- )
 (       Callers                                                                )

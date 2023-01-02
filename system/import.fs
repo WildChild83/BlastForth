@@ -138,7 +138,7 @@ Importing definitions {
     active-addr 2 + active-index @ 1- 2* bounds
     ?do dup i romh@ = if i unloop exit endif 2 +loop
     active-index @ dup active-size > abort" Palette overflow!"
-    dup 1+ dup 16 mod 0= 1 and + active-index ! active-color ;
+    dup 1+ active-index ! active-color ;
 : pal-index ( rgb -- c ) 
     dup 0< if drop 0 exit endif  pal-addr  tuck romh!  active-addr - 2/ ;
 : pal-name ( -- addr u ) active-palette cell+ cell+ count ;
@@ -147,9 +147,6 @@ Importing definitions {
 : .pal-info ( -- )
     pal-name type 
     pal-left ?dup if ."  has " . ." slots left" else ."  is full" endif ;
-: .pal-data ( -- ) 
-    0 active-addr active-index @ 2* bounds
-    ?do ?dup if 1- else 15 cr endif i romh@ hex.3 2 +loop drop ;
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
@@ -178,12 +175,17 @@ Importing definitions {
 : compile-tile ( addr -- ) 8 0 do dup dword@ >4< , pitch + loop drop ;
 : compile-sprite-column ( addr -- )
     pitch 8 * tuck sprite-height * bounds ?do i compile-tile dup +loop drop ;
-: compile-sprite-frame ( addr -- )
-    sprite-width 4 * bounds ?do i compile-sprite-column 4 +loop ;
-
+: compile-sprite-frame ( addr framewidth -- )
+    bounds ?do i compile-sprite-column 4 +loop ;
+: compile-sprite-framerow ( framewidth addr -- framewidth )
+    pitch bounds ?do i over compile-sprite-frame dup +loop ;
 : compile-sprite ( "name" -- )
     sprite-size area sprite-picture
-    image  compile-sprite-frame ;
+    sprite-height pitch * 8 *   sprite-width 4 * 
+    image area bounds ?do i compile-sprite-framerow over +loop 2drop ;
+
+
+
 
 : compile-image ( "name" -- )
     sprite-size 0< abort" Tile imports not implemented yet."
@@ -209,13 +211,20 @@ Forth definitions Importing {
 
 : palette ( "name" -- ) host-only 1 dopalette& palette, does> do-palette, ;
 
-: +!color       ( rgb -- ) host-only pal-index drop ;
-:  !color ( rgb index -- ) host-only active-color romh! ;
-:  @color ( index -- rgb ) host-only active-color romh@ ;
-: .colors           ( -- ) host-only cr .pal-info .pal-data ;
-
 : rgb ( red green blue -- rgb ) host-only
     7 and 5 lshift swap 7 and 2* + 4 lshift swap 7 and 2* + ;
+: components ( rgb -- red green blue ) host-only
+    2/ dup 7 and >r 4 rshift dup 7 and >r 4 rshift 7 and r> r> ;
+
+: +!color ( red green blue -- )       rgb pal-index drop ;
+:  !color ( red green blue index -- ) rgb active-color romh! ;
+:  @color ( index -- red green blue ) active-color romh@ components ;
+
+: .color ( red green blue -- ) host-only rot 0 .r swap 0 .r . ;
+: .colors ( -- ) host-only
+    cr .pal-info cr active-index @ 0 ?do
+        i dup 3 and 0= if 2 spaces endif active-color romh@ components .color
+    loop ;
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )

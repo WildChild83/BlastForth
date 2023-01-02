@@ -113,6 +113,8 @@ synonym flag 0<>     synonym not 0=
 : ?schar ( n -- n flag ) dup        -128        128 within ;
 : ?shalf ( n -- n flag ) dup      -32768      32768 within ;
 : ?scell ( n -- n flag ) dup -2147483648 2147483648 within ;
+: ?uchar ( n -- n flag ) dup           0        256 within ;
+: ?uhalf ( n -- n flag ) dup           0      65536 within ;
 :  ?char ( n -- n flag ) dup        -128        256 within ;
 :  ?half ( n -- n flag ) dup      -32768      65536 within ;
 :  ?cell ( n -- n flag ) dup -2147483648 4294967296 within ;

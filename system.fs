@@ -14,10 +14,6 @@ include system/glossary.fs
 ( ---------------------------------------------------------------------------- )
 Forth definitions {
 
-\ Rom output file size.  Max supported size is 4 megabytes.
-\   This number can also be specified in "kilobytes" or "bytes".
-1 megabytes make SizeOfROM
-
 \ If DEBUG=true then program includes extra checks and error reporting
 \   (and larger, slower code).  Set to false for "release version."
 true make DEBUG
@@ -51,6 +47,9 @@ false make FloatStack
 \       www.nimblemachines.com/symmetric-division-considered-harmful/
 false make FlooredDivision
 
+\ If RomEndField=true then write the End-of-ROM address into the Sega Header
+true make RomEndField
+
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
 (       Sega ROM Header                                                        )
@@ -67,7 +66,7 @@ include system/romfile.fs       Forth definitions
 ( Checksum )            0 h,
 ( I/O Support )  ascii" J               "
 ( ROM Start )           0 ,
-( ROM End )     SizeOfROM { 1- } ,
+( ROM End )      romspace make romend 0 , \ this value will be written later
 ( RAM Start )     $FF0000 ,
 ( RAM End )       $FFFFFF ,
 ( SRAM? )               0 ,
@@ -139,7 +138,7 @@ include system/input.fs         \ read controllers
 (       Sound Driver                                                           )
 ( **************************************************************************** )
 ( ---------------------------------------------------------------------------- )
-include system/audio/z80.fs
+include system/audio/audio.fs
 
 ( ---------------------------------------------------------------------------- )
 include system/audio/silence.fs
@@ -162,13 +161,10 @@ create default-palette
     $0444 h, $000E h, $00E0 h, $0E00 h, $00EE h, $0E0E h, $0EE0 h, $0EEE h,
 
 : default-video-config \ this word will be invoked during system start-up
-    2 >autoinc
-    $C000 to foreground-table       $B800 to sprite-table
-    $E000 to background-table       $BC00 to scroll-table       
-    $B000 to     window-table       0 to windowX
-    +h320  +v224  64x64planes       0 to windowY
-    255 >hint-counter               0 to backcolor-index
-    set-video-config
+    2 >autoinc    0 to backcolor-index
+    +h320  +v224  64x32planes   0 +top-window
+    setup-graphics
+    255 >hint-counter               
     default-palette $00 16 move>color ;
 
 ( ---------------------------------------------------------------------------- )
