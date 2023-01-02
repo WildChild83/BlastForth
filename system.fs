@@ -141,13 +141,10 @@ include system/input.fs         \ read controllers
 include system/audio/audio.fs
 
 ( ---------------------------------------------------------------------------- )
-include system/audio/silence.fs
-
-( ---------------------------------------------------------------------------- )
 Forth definitions
 
 : init-audio \ this word will be invoked during system start-up
-    ;
+    silence ;
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )

@@ -40,6 +40,16 @@ Glossary Z80 definitions {
 
 include z80.fs
 
+romspace Z80 Assembler
+    a xor, 8192 39 - # bc load, 39 # de load, 38 # hl load, hl sp load,
+    a [hl] load, +copy, ix pull, iy pull, a i load, a r load,
+    de pull, hl pull, af pull, af><af, exchange, bc pull,
+    de pull, hl pull, af pull, hl sp load, -interrupts, imode1,
+    $E9 # [hl] load, [hl] jump,
+romspace over -
+
+Forth definitions Z80
+sound-driver: silence
 
 ( ---------------------------------------------------------------------------- )
 ( ---------------------------------------------------------------------------- )
