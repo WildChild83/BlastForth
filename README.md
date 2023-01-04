@@ -18,13 +18,15 @@ Like most Forths, BlastForth is NOT case-sensitive.  Uppercase and lowercase let
 
 32-bit numbers are called *cells*, 16-bit numbers are *half cells*, and 8-bit numbers are called *chars* (characters).  Words that operate on half-cells or chars have an "h" or "c" prefix.  There is also limited support for 64-bit *double cell* numbers, and those words are prefixed with a "d" or a "2."
 
+BlastForth is an *indirect threaded* Forth.  The first cell of a definition contains a pointer to machine-executable code, and the remaining cells are the *data field* of the definition.  The name and link fields exist only on the host machine; they are not present in the output ROM file.
+
 Definitions surrounded by `{ }` (curly braces) execute immediately on the host machine at compile time, instead of compiling and executing on the target machine.  `{ }` blocks are the equivalent of compile-time "macros."  The standard word "immediate" is not supported; use `{ }` instead.
 
 "Host" machine refers to the desktop or laptop PC you write your programs with.  The "target" machine is the Sega Genesis/Megadrive.  Since BlastForth is a *cross-compiler* for a ROM-based system, it must distinguish between "compile time" and "run time" like a conventional compiler (native Forths do not typically make this distinction).
 
 The M68000 CPU supports only 16-bit *symmetric* division.  BlastForth's standard division operators (`/`, `/mod`, etc.) use a software fallback routine if the divisor doesn't fit in 16 bits.  The Project Settings determine whether the compiler defaults to "symmetric" or "floored" division, with symmetric being the default.
 
-Words enclosed in parentheses `( )`, such as `(init-video-config)`, are for internal use and should not be directly used in your code.
+Words enclosed in parentheses `( )`, such as `(init-video-config)`, are for internal use and should generally not be used outside of the source file they are defined in.
 
 Words that end with an `&` (ampersand) return a *code field* containing raw machine instructions.  Examples include `docolon&`, `doconst&`, and `next&`.
 
