@@ -110,10 +110,17 @@ code (gavail2) ( bytes vramaddr -- bytes [vramaddr] )
     2 # tos lsl, 2 # tos h lsr, tos swap, tos video-ctrl [#] move,
     video-data [#] tos move, tos [sp half +] h add, tos h clear, tos swap, 
     tos h test, z= if tos pull, tp rpull, endif next
+: available-video ( -- bytes ) 2 >autoinc (gavail1) begin (gavail2) again ;
 
-: available-video ( -- bytes ) 
-    2 >autoinc (gavail1) begin (gavail2) again ;
+( ---------------------------------------------------------------------------- )
+code (gmax1) ( bytes vramaddr -- bytes [vramaddr] )
+    2 # tos lsl, 2 # tos h lsr, tos swap, tos video-ctrl [#] move,
+    video-data [#] tos move, [sp half +] tos h compare,
+    ugt if tos [sp half +] h move, endif tos h clear, tos swap,
+    tos h test, z= if tos pull, tp rpull, endif next
+: max-video-allocation ( -- bytes ) 2 >autoinc (gavail1) begin (gmax1) again ;
 
+( ---------------------------------------------------------------------------- )
 : first-video-region ( -- vram-addr  bytes )
     2 >autoinc (gavail1) tuck ?if (gavail2) drop endif ;
 
