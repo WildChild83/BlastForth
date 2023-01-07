@@ -65,6 +65,13 @@ code available ( -- u )
     tos push, tos clear, a1 clear, -1 # d1 move, begin
     [a1 -2 +] d1 h move, z<> while d1 a1 move, [a1 -4 +] tos h add, repeat next
 
+code max-allocation ( -- u )
+    tos push, tos clear, -1 # d1 move, a1 clear,
+    begin [a1 -2 +] d1 h move, z<> while
+        d1 a1 move, [a1 -4 +] d2 h move, d2 tos h compare,
+        dup ult until d2 tos h move,
+    repeat next
+
 : resize ( addr1 u -- addr2 ior )
     -interrupts[
         swap dup allocation over 2>r
