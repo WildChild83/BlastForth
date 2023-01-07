@@ -19,13 +19,13 @@ $A11200 constant z80reset
 
 ( ---------------------------------------------------------------------------- )
 code z80[[ ( -- )
-    z80reset [#] a1 address, sr -[rp] h move, 2700 # sr h move,
+    z80reset [#] a1 address, sr -[rp] h move, $2700 # sr h move,
     0 # [a1] h move, $100 # [a1 -256 +] h move, $100 # [a1] h move, next
 code ]]z80 ( -- )
     z80reset [#] a1 address, 0 # [a1] h move, d1 20 for loop
     $100 # [a1] h move, 0 # [a1 -256 +] h move, [rp]+ sr h move, next
 code z80[  ( -- )
-    z80request [#] a1 address, sr -[rp] h move, 2700 # sr h move,
+    z80request [#] a1 address, sr -[rp] h move, $2700 # sr h move,
     $100 # [a1] h move, begin 0 # [a1] test-bit, z= until next
 code ]z80  ( -- )
     0 # z80request [#] h move, [rp]+ sr h move, next
