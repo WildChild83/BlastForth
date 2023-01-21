@@ -84,23 +84,51 @@ code (gfree2) ( vramaddr prev next bytes -- vramaddr prev' next' bytes flag )
     endif endif tos push, -1 # tos move, next
 code (gfree3) ( vramaddr prev next bytes -- ior )
     video-ctrl [#] a1 address, [a1 -4 +] a2 address, d1 pull, d2 pull, d3 pull,
-    \ D1=next, D2=prev, D3=vramaddr
-    d1 h test, z<> if d3 d4 h move, tos d4 h add, d4 d1 h compare, z= if
-        d4 clear, d1 d4 h move, 2 # d4 lsl, 2 # d4 h lsr, d4 swap, d4 [a1] move,
-        [a2] d4 move, d4 tos h add, d4 swap, d4 d1 h move, endif endif
-    d2 test, z= if
-        d1 swap, tos d1 h move, d3 (gnode) [#] h move,
-        2 # d3 lsl, 2 # d3 h lsr, $4000 # d3 h or, d3 swap,
-        d3 [a1] move, d1 [a2] move, tos clear, next, endif
-    d2 d4 h move, d2 swap, d2 d4 h add, d3 d4 h sub, z<> if
-        d2 h clear, d2 swap, 2 # d2 lsl, 2 # d2 h lsr, $4000 # d2 h or,
-        d2 swap, d2 [a1] move, d3 [a2] h move,
-        else d2 tos h add, d2 swap, d2 d3 h move, endif
-    d1 swap, tos d1 h move, 2 # d3 lsl, 2 # d3 h lsr, $4000 # d3 h or,
-    d3 swap, d3 [a1] move, d1 [a2] move, tos clear, next
+    \ D1=next, D2=prev, D3=vramaddr, D4=data
+    d1 h test, d5 z<> set?, d3 d4 h move, tos d4 h add,
+    d1 d4 h compare, d4 z= set?, d5 d4 c and, z<> if
+        d4 clear, d1 d4 move, 2 # d4 lsl, 2 # d4 h lsr, d4 swap, d4 [a1] move,
+        [a2] d4 h move, d4 swap, d1 d4 h move, tos d4 h add,
+    else d1 d4 h move, d4 swap, tos d4 h move, endif
+    d2 test, z= if d3 (gnode) [#] h move, else
+        d2 d5 move, d5 swap, d2 d5 h add, d3 d5 h compare, z= if
+            d2 d5 move, d5 swap, d5 d4 h add, $FFFF # d2 and,
+            2 # d2 lsl, 2 # d2 h lsr, $4000 # d2 h or, d2 swap,
+            d2 [a1] move, d4 [a2] move, next, endif
+        $FFFF # d2 and, 2 # d2 lsl, 2 # d2 h lsr, $4000 # d2 h or,
+        d2 swap, d2 [a1] move, d3 [a2] h move, endif
+    2 # d3 lsl, 2 # d3 h lsr, $4000 # d3 h or, d3 swap,
+    d3 [a1] move, d4 [a2] move, tos clear, next
+
+code (gfree3.2) ( vramaddr prev next bytes -- ior )
+    video-ctrl [#] a1 address, [a1 -4 +] a2 address,
+    [sp]+ [[ d1 d2 d3 d4 d5 d6 ]] h movem,
+    \ D1=ThisSize, D2=NextAddr, D3=PrevSize, D4=ThisAddr, D6=NewAddr, TOS=NewSize
+    
+    next
 
 : free-video ( vramaddr bytes -- ior )
     2 >autoinc (gfree1) begin (gfree2) until (gfree3) ;
+
+( ----------------------------------------------------------------------------
+IF NewAddr+NewSize = NextAddr THEN
+    ADDR = NextAddr
+    SIZE = NewSize + @Next.Size
+ELSE
+    ADDR = ThisAddr
+    SIZE = NewSize
+ENDIF
+
+IF ThisAddr = 0 THEN
+    !GNODE  NewAddr
+ELSE
+    IF ThisAddr+ThisSize = NewAddr THEN
+        !ThisAddr  ADDR, SIZE+PrevSize
+        RETURN
+    ENDIF
+    !ThisAddr  NewAddr
+ENDIF
+!NewAddr  ADDR, SIZE
 
 ( ---------------------------------------------------------------------------- )
 code (gavail1) ( -- bytes vramaddr )
@@ -145,7 +173,7 @@ code (gmax1) ( bytes vramaddr -- bytes [vramaddr] )
     $A000 to window-address         $C000 to foreground-address
     $B800 to sprite-address         $E000 to background-address
     $BC00 to scroll-address         set-video-config
-    init-graphics  (setup-window-memory)  (setup-plane-memory) ;
+    init-graphics (setup-window-memory) ; \ (setup-plane-memory) ;
 
 ( ---------------------------------------------------------------------------- )
 ( **************************************************************************** )
@@ -168,10 +196,10 @@ rawcode (x1)  return, end
 rawcode (x2)  d1 d1 h add,  return, end
 rawcode (x3)  d1 d2 h move, d2 d2 h add, d2 d1 h add, return, end
 rawcode (x4)  2 # d1 h lsl, return, end
-rawcode (x6)  d1  d1 h add, d1 d2 move, d2 d2 h add, d2 d1 h add, return, end
+rawcode (x6)  d1  d1 h add, d1 d2 h move, d2 d2 h add, d2 d1 h add, return, end
 rawcode (x8)  3 # d1 h lsl, return, end
 rawcode (x9)  d1 d2 h move, 3 # d1 h lsl, d2 d1 h add, return, end
-rawcode (x12) 2 # d1 h lsl, d1 d2 move, d2 d2 h add, d2 d1 h add, return, end
+rawcode (x12) 2 # d1 h lsl, d1 d2 h move, d2 d2 h add, d2 d1 h add, return, end
 rawcode (x16) 4 # d1 h lsl, return, end
 
 { : (index-addr) ( dimensions -- romaddr )
